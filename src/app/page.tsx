@@ -28,8 +28,9 @@ export default function Home() {
           </h1>
 
           {/* Bio */}
-          <p className="text-neutral-600 dark:text-neutral-300 text-sm leading-relaxed mb-6">
-            안녕하세요! 웹툰 작가 꺄륵입니다.
+          <p className="text-neutral-600 dark:text-neutral-300 text-sm leading-relaxed mb-6 break-keep">
+            일상의 소소한 순간들을 따뜻한 그림과 이야기로 그립니다. 🎨<br />
+            선 하나, 대사 한 줄에 진심을 담아 기분 좋은 웃음과 위로를 전해요. ✨
           </p>
 
           {/* Divider */}
