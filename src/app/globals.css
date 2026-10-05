@@ -1,26 +1,69 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --background: #F9FAFB;
+  --foreground: #191F28;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* TDS Primary Color */
+  --tds-blue-500: #3182F6;
+  --tds-blue-600: #1B64DA;
+  --tds-blue-50: #E8F3FF;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* TDS Greyscale */
+  --tds-grey-900: #191F28;
+  --tds-grey-800: #333D4B;
+  --tds-grey-700: #4E5968;
+  --tds-grey-600: #6B7684;
+  --tds-grey-500: #8B95A1;
+  --tds-grey-400: #B0B8C1;
+  --tds-grey-300: #D1D6DB;
+  --tds-grey-200: #E5E8EB;
+  --tds-grey-100: #F2F4F6;
+  --tds-grey-50: #F9FAFB;
+
+  /* Semantic */
+  --tds-red-500: #F04452;
+  --tds-green-500: #04C062;
+  --tds-orange-500: #FF8F00;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #F2F4F6;
+  color: #191F28;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+}
+
+/* 숫자/금액 가독성을 위한 tabular numbers */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 스크롤바 커스텀 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1D6DB;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B0B8C1;
+}
+
+/* 터치 하이라이트 제거 */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background-color: #3182F6;
+  color: #FFFFFF;
 }
