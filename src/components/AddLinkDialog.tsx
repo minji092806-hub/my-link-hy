@@ -46,10 +46,10 @@ const CATEGORY_OPTIONS: Array<{
   label: string;
   icon: React.ReactNode;
 }> = [
-  { id: 'work', label: '연재작·작품', icon: <BookOpen className="size-3.5" /> },
-  { id: 'sns', label: 'SNS·채널', icon: <Camera className="size-3.5" /> },
-  { id: 'shop', label: '굿즈·스토어', icon: <ShoppingBag className="size-3.5" /> },
-  { id: 'contact', label: '문의·후원', icon: <Mail className="size-3.5" /> },
+  { id: 'work', label: '연재작 · 작품', icon: <BookOpen className="size-3.5" /> },
+  { id: 'sns', label: 'SNS · 채널', icon: <Camera className="size-3.5" /> },
+  { id: 'shop', label: '굿즈 · 스토어', icon: <ShoppingBag className="size-3.5" /> },
+  { id: 'contact', label: '문의 · 후원', icon: <Mail className="size-3.5" /> },
 ];
 
 const PRESET_ICONS = ['🔗', '📖', '📸', '🛍️', '📂', '🎬', '💬', '☕', '💌', '🎨', '💻', '⭐', '🚀', '🎵'];
@@ -244,7 +244,7 @@ export function AddLinkDialog({ open, onOpenChange, onAddLink }: AddLinkDialogPr
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[460px] p-6 sm:rounded-3xl">
+      <DialogContent className="w-[calc(100%-1.5rem)] max-w-[480px] p-5 sm:p-6 sm:rounded-3xl overflow-x-hidden">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <span className="flex size-7 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
@@ -257,9 +257,9 @@ export function AddLinkDialog({ open, onOpenChange, onAddLink }: AddLinkDialogPr
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onValidSubmit, onInvalidSubmit)} className="mt-2 space-y-4">
+        <form onSubmit={handleSubmit(onValidSubmit, onInvalidSubmit)} className="mt-1 space-y-3.5 w-full min-w-0 overflow-hidden">
           {/* ── 실시간 미리보기 ───────────────────────────────────────── */}
-          <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-3 dark:border-blue-900/40 dark:bg-blue-950/20">
+          <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-2.5 sm:p-3 dark:border-blue-900/40 dark:bg-blue-950/20 w-full min-w-0">
             <div className="mb-1.5 flex items-center justify-between">
               <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
                 <Sparkles className="size-3" />
@@ -270,12 +270,12 @@ export function AddLinkDialog({ open, onOpenChange, onAddLink }: AddLinkDialogPr
               </span>
             </div>
 
-            <Card className="flex w-full items-center justify-between gap-3 p-3 border-border bg-card shadow-xs">
+            <Card className="flex w-full min-w-0 items-center justify-between gap-3 p-3 border-border bg-card shadow-xs overflow-hidden">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-xl select-none">
                 {currentIcon.trim() || '🔗'}
               </div>
-              <div className="flex min-w-0 flex-1 flex-col text-left">
-                <div className="flex items-center gap-1.5">
+              <div className="flex min-w-0 flex-1 flex-col text-left overflow-hidden">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <span
                     className={cn(
                       'truncate text-sm font-bold',
@@ -285,7 +285,7 @@ export function AddLinkDialog({ open, onOpenChange, onAddLink }: AddLinkDialogPr
                     {currentTitle.trim() || '링크 제목이 여기에 표시돼요'}
                   </span>
                   {currentBadge && currentBadge !== '없음' && (
-                    <Badge variant={getBadgeVariant(currentBadge)} className="text-[9px] px-1.5 py-0">
+                    <Badge variant={getBadgeVariant(currentBadge)} className="text-[9px] px-1.5 py-0 shrink-0">
                       {currentBadge}
                     </Badge>
                   )}
@@ -404,8 +404,13 @@ export function AddLinkDialog({ open, onOpenChange, onAddLink }: AddLinkDialogPr
 
           {/* ── 카테고리 ─────────────────────────────────────────────── */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-foreground">카테고리</Label>
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-bold text-foreground">카테고리</Label>
+              <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                {CATEGORY_OPTIONS.find((c) => c.id === currentCategory)?.label}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
               {CATEGORY_OPTIONS.map((cat) => {
                 const isSelected = currentCategory === cat.id;
                 return (
@@ -414,52 +419,71 @@ export function AddLinkDialog({ open, onOpenChange, onAddLink }: AddLinkDialogPr
                     type="button"
                     onClick={() => setValue('category', cat.id, { shouldValidate: true })}
                     className={cn(
-                      'flex items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-semibold transition-all active:scale-95 cursor-pointer',
+                      'flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-left transition-all active:scale-[0.98] cursor-pointer min-w-0',
                       isSelected
-                        ? 'border-blue-600 bg-blue-50 text-blue-600 dark:border-blue-500 dark:bg-blue-950 dark:text-blue-400 shadow-xs'
-                        : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                        ? 'border-blue-600 bg-blue-50/70 text-blue-900 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-500 shadow-xs ring-1 ring-blue-600/20'
+                        : 'border-border bg-card text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                     )}
                   >
-                    {cat.icon}
-                    <span>{cat.label}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className={cn(
+                          'flex size-6 shrink-0 items-center justify-center rounded-lg text-xs transition-colors',
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-2xs'
+                            : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {cat.icon}
+                      </span>
+                      <span
+                        className={cn(
+                          'text-xs font-bold whitespace-nowrap truncate',
+                          isSelected ? 'text-blue-950 dark:text-blue-100 font-extrabold' : 'text-foreground/90'
+                        )}
+                      >
+                        {cat.label}
+                      </span>
+                    </div>
+                    {isSelected && (
+                      <Check className="size-3.5 text-blue-600 dark:text-blue-400 shrink-0 stroke-[2.5]" />
+                    )}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* ── 대표 아이콘 ──────────────────────────────────────────── */}
+          {/* ── 대표 아이콘 (가로 스크롤 제거 & 한눈에 보이는 그리드 랩) ──── */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label className="text-xs font-bold text-foreground">대표 아이콘</Label>
-              <span className="text-[11px] text-muted-foreground">선택 또는 직접 입력</span>
+              <span className="text-[11px] text-muted-foreground">추천 클릭 또는 직접 입력</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* 직접 입력 */}
               <Input
                 type="text"
                 maxLength={4}
                 {...register('icon')}
+                title="직접 이모지 입력"
+                placeholder="🔗"
                 className={cn(
-                  'w-16 text-center text-lg h-9',
+                  'w-12 text-center text-base h-8.5 shrink-0 px-1',
                   !currentIcon.trim() && 'border-amber-400 focus:border-amber-500 focus:ring-amber-500/20'
                 )}
               />
-              {!currentIcon.trim() && (
-                <span className="text-[11px] text-amber-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="size-3" />
-                  빈칸이면 🔗로 표시돼요
-                </span>
-              )}
-              <div className="flex flex-1 items-center gap-1 overflow-x-auto pb-1 scrollbar-hide">
+              {/* 추천 프리셋 이모지들 (한눈에 모두 보이도록 flex-wrap) */}
+              <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
                 {PRESET_ICONS.map((emoji) => (
                   <button
                     key={emoji}
                     type="button"
                     onClick={() => setValue('icon', emoji, { shouldValidate: true })}
                     className={cn(
-                      'flex size-8 shrink-0 items-center justify-center rounded-lg border text-base transition-all hover:scale-110 active:scale-95 cursor-pointer',
+                      'flex size-8 shrink-0 items-center justify-center rounded-lg border text-sm transition-all hover:scale-105 active:scale-95 cursor-pointer',
                       currentIcon === emoji
-                        ? 'border-blue-600 bg-blue-50 dark:border-blue-500 dark:bg-blue-950'
+                        ? 'border-blue-600 bg-blue-50 dark:border-blue-500 dark:bg-blue-950 shadow-xs'
                         : 'border-border bg-background hover:bg-muted'
                     )}
                   >

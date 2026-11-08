@@ -50,9 +50,12 @@ function formatUpdatedAt(val: unknown): string | null {
 interface LinkCardProps {
   link: LinkItem;
   onClick?: (link: LinkItem) => void;
-  onUpdate?: (id: string, updates: { title: string; url: string }) => Promise<void> | void;
+  onUpdate?: (id: string, updates: Partial<LinkItem>) => Promise<void> | void;
+  onEditRequest?: (link: LinkItem) => void;
   onDeleteRequest?: (link: LinkItem) => void;
   isDeleting?: boolean;
+  canEdit?: boolean;
+  onAuthRequired?: () => void;
   className?: string;
 }
 
@@ -60,8 +63,11 @@ export function LinkCard({
   link,
   onClick,
   onUpdate,
+  onEditRequest,
   onDeleteRequest,
   isDeleting,
+  canEdit = true,
+  onAuthRequired,
   className,
 }: LinkCardProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -103,6 +109,15 @@ export function LinkCard({
   const handleStartEdit = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (canEdit === false) {
+      if (onAuthRequired) onAuthRequired();
+      return;
+    }
+    // 팝업 다이얼로그 요청이 있으면 다이얼로그 열기
+    if (onEditRequest) {
+      onEditRequest(link);
+      return;
+    }
     setEditTitle(link.title);
     setEditUrl(link.url);
     setErrors({});
@@ -144,6 +159,10 @@ export function LinkCard({
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (canEdit === false) {
+      if (onAuthRequired) onAuthRequired();
+      return;
+    }
     if (onDeleteRequest) {
       onDeleteRequest(link);
     }
@@ -365,13 +384,16 @@ export function LinkCard({
         onClick={(e) => e.stopPropagation()}
       >
         {/* 수정 버튼 (연필 아이콘 - 항상 표시) */}
-        {onUpdate && (
+        {(onUpdate || onEditRequest) && (
           <button
             type="button"
             onClick={handleStartEdit}
-            title="링크 수정"
+            title={canEdit ? "링크 수정" : "수정하려면 로그인이 필요해요"}
             aria-label="링크 수정"
-            className="flex size-8 items-center justify-center rounded-lg text-neutral-600 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-colors cursor-pointer dark:text-neutral-400 dark:hover:bg-blue-950/60 dark:hover:text-blue-400 border border-transparent hover:border-blue-200 dark:hover:border-blue-900"
+            className={cn(
+              "flex size-8 items-center justify-center rounded-lg text-neutral-600 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-colors cursor-pointer dark:text-neutral-400 dark:hover:bg-blue-950/60 dark:hover:text-blue-400 border border-transparent hover:border-blue-200 dark:hover:border-blue-900",
+              !canEdit && "opacity-70 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+            )}
           >
             <Pencil className="size-3.5" />
           </button>
@@ -383,9 +405,12 @@ export function LinkCard({
             type="button"
             onClick={handleDelete}
             disabled={isDeleting}
-            title="링크 삭제"
+            title={canEdit ? "링크 삭제" : "삭제하려면 로그인이 필요해요"}
             aria-label="링크 삭제"
-            className="flex size-8 items-center justify-center rounded-lg text-neutral-600 hover:text-red-600 hover:bg-red-50 active:scale-95 transition-colors cursor-pointer dark:text-neutral-400 dark:hover:bg-red-950/60 dark:hover:text-red-400 border border-transparent hover:border-red-200 dark:hover:border-red-900 disabled:pointer-events-none"
+            className={cn(
+              "flex size-8 items-center justify-center rounded-lg text-neutral-600 hover:text-red-600 hover:bg-red-50 active:scale-95 transition-colors cursor-pointer dark:text-neutral-400 dark:hover:bg-red-950/60 dark:hover:text-red-400 border border-transparent hover:border-red-200 dark:hover:border-red-900 disabled:pointer-events-none",
+              !canEdit && "opacity-70 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+            )}
           >
             {isDeleting ? (
               <Loader2 className="size-3.5 animate-spin text-red-500" />

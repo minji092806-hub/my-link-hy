@@ -18,17 +18,18 @@ import {
 } from "firebase/firestore";
 
 /**
- * Firestore 경로: users/anonymous/links
+ * Firestore 컬렉션 상수
+ * - users/{userId}/links
  */
 export const USERS_COLLECTION = "users";
 export const ANONYMOUS_DOC = "anonymous";
 export const LINKS_SUBCOLLECTION = "links";
 
 /**
- * Firestore 'users/anonymous/links' 서브컬렉션 참조 헬퍼
+ * Firestore 'users/{userId}/links' 서브컬렉션 참조 헬퍼
  */
-export function getLinksCollectionRef() {
-  return collection(db, USERS_COLLECTION, ANONYMOUS_DOC, LINKS_SUBCOLLECTION);
+export function getLinksCollectionRef(userId: string = ANONYMOUS_DOC) {
+  return collection(db, USERS_COLLECTION, userId || ANONYMOUS_DOC, LINKS_SUBCOLLECTION);
 }
 
 /**
@@ -53,7 +54,7 @@ function mapDocToLinkItem(id: string, data: DocumentData): LinkItem {
 }
 
 /**
- * 새 링크를 Firestore 'users/anonymous/links' 컬렉션에 추가
+ * 새 링크를 Firestore 'users/{userId}/links' 컬렉션에 추가
  * - createdAt: serverTimestamp() 기준으로 저장
  * - undefined 필드를 방지하여 Firestore 에러를 차단합니다.
  */
@@ -61,9 +62,10 @@ export async function addLinkToFirestore(
   newLink: Omit<LinkItem, "id" | "order" | "clickCount"> & {
     order?: number;
     clickCount?: number;
-  }
+  },
+  userId: string = ANONYMOUS_DOC
 ): Promise<LinkItem> {
-  const linksRef = getLinksCollectionRef();
+  const linksRef = getLinksCollectionRef(userId);
 
   // Firestore는 undefined 필드 저장을 허용하지 않으므로 정의된 값만 설정
   const docPayload: Record<string, unknown> = {
@@ -108,10 +110,10 @@ export async function addLinkToFirestore(
 }
 
 /**
- * Firestore 'users/anonymous/links' 경로에서 createdAt 기준 최신순(desc)으로 1회 조회
+ * Firestore 'users/{userId}/links' 경로에서 createdAt 기준 최신순(desc)으로 1회 조회
  */
-export async function getLinksFromFirestore(): Promise<LinkItem[]> {
-  const linksRef = getLinksCollectionRef();
+export async function getLinksFromFirestore(userId: string = ANONYMOUS_DOC): Promise<LinkItem[]> {
+  const linksRef = getLinksCollectionRef(userId);
   const linksQuery = query(linksRef, orderBy("createdAt", "desc"));
   const snapshot = await getDocs(linksQuery);
 
@@ -121,14 +123,15 @@ export async function getLinksFromFirestore(): Promise<LinkItem[]> {
 }
 
 /**
- * Firestore의 'users/anonymous/links' 목록을 createdAt 기준 최신순(desc)으로 실시간 구독(onSnapshot)
+ * Firestore의 'users/{userId}/links' 목록을 createdAt 기준 최신순(desc)으로 실시간 구독(onSnapshot)
  * - 페이지 로드 시 초기 데이터를 수신하고, 링크 추가/수정/삭제 시 실시간으로 콜백이 실행됩니다.
  */
 export function subscribeToLinks(
+  userId: string = ANONYMOUS_DOC,
   onSuccess: (links: LinkItem[]) => void,
   onError?: (error: Error) => void
 ): Unsubscribe {
-  const linksRef = getLinksCollectionRef();
+  const linksRef = getLinksCollectionRef(userId);
   const linksQuery = query(linksRef, orderBy("createdAt", "desc"));
 
   return onSnapshot(
@@ -140,20 +143,21 @@ export function subscribeToLinks(
       onSuccess(items);
     },
     (error) => {
-      console.error("[Firestore] links 실시간 구독 에러 (createdAt desc):", error);
+      console.error(`[Firestore] users/${userId}/links 실시간 구독 에러:`, error);
       if (onError) onError(error);
     }
   );
 }
 
 /**
- * Firestore 링크 수정 (users/anonymous/links/{linkId})
+ * Firestore 링크 수정 (users/{userId}/links/{linkId})
  */
 export async function updateLinkInFirestore(
   linkId: string,
-  updates: Partial<Pick<LinkItem, "title" | "url" | "description" | "category" | "icon" | "color" | "badge" | "isActive">>
+  updates: Partial<Pick<LinkItem, "title" | "url" | "description" | "category" | "icon" | "color" | "badge" | "isActive">>,
+  userId: string = ANONYMOUS_DOC
 ): Promise<void> {
-  const linkDocRef = doc(db, USERS_COLLECTION, ANONYMOUS_DOC, LINKS_SUBCOLLECTION, linkId);
+  const linkDocRef = doc(db, USERS_COLLECTION, userId || ANONYMOUS_DOC, LINKS_SUBCOLLECTION, linkId);
   const docPayload: Record<string, unknown> = {
     updatedAt: serverTimestamp(),
     updated_at: serverTimestamp(),
@@ -188,24 +192,30 @@ export async function updateLinkInFirestore(
 }
 
 /**
- * Firestore 링크 삭제 (users/anonymous/links/{linkId})
+ * Firestore 링크 삭제 (users/{userId}/links/{linkId})
  */
-export async function deleteLinkFromFirestore(linkId: string): Promise<void> {
-  const linkDocRef = doc(db, USERS_COLLECTION, ANONYMOUS_DOC, LINKS_SUBCOLLECTION, linkId);
+export async function deleteLinkFromFirestore(
+  linkId: string,
+  userId: string = ANONYMOUS_DOC
+): Promise<void> {
+  const linkDocRef = doc(db, USERS_COLLECTION, userId || ANONYMOUS_DOC, LINKS_SUBCOLLECTION, linkId);
   await deleteDoc(linkDocRef);
 }
 
 /**
  * Firestore 링크 클릭 카운트 원자적(atomic) 증가
  */
-export async function incrementClickCountInFirestore(linkId: string): Promise<void> {
+export async function incrementClickCountInFirestore(
+  linkId: string,
+  userId: string = ANONYMOUS_DOC
+): Promise<void> {
   try {
-    const linkDocRef = doc(db, USERS_COLLECTION, ANONYMOUS_DOC, LINKS_SUBCOLLECTION, linkId);
+    const linkDocRef = doc(db, USERS_COLLECTION, userId || ANONYMOUS_DOC, LINKS_SUBCOLLECTION, linkId);
     await updateDoc(linkDocRef, {
       clickCount: increment(1),
       updatedAt: serverTimestamp(),
     });
   } catch (err) {
-    console.warn(`[Firestore] link (${linkId}) clickCount 업데이트 실패:`, err);
+    console.warn(`[Firestore] users/${userId}/links/${linkId} clickCount 업데이트 실패:`, err);
   }
 }
