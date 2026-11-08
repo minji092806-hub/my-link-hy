@@ -204,18 +204,62 @@ export async function deleteLinkFromFirestore(
 
 /**
  * Firestore 링크 클릭 카운트 원자적(atomic) 증가
+ * - users/{userId}/links/{linkId} 문서의 clickCount 필드 갱신
+ * - Firestore increment(1)을 통해 동시 클릭 시에도 안전하게 원자적 카운트
+ * - 서버 API(/api/links/click)를 호출하여 서버에서 안전하게 처리
+ * - 로그인 상태 확인 및 실패 시 console.error 출력
  */
 export async function incrementClickCountInFirestore(
   linkId: string,
-  userId: string = ANONYMOUS_DOC
+  userId: string
 ): Promise<void> {
+  // 1. 로그인 확인 (로그인되지 않은 경우 콘솔 에러 출력 후 중단)
+  if (!userId || userId.trim() === "" || userId === ANONYMOUS_DOC) {
+    console.error(
+      `[Firestore] 로그인 확인 실패: 로그인된 유저 ID가 없어 클릭 카운트를 저장할 수 없습니다. (userId: "${userId}", linkId: "${linkId}")`
+    );
+    return;
+  }
+
+  if (!linkId || linkId.trim() === "") {
+    console.error("[Firestore] 클릭 카운트 저장 실패: linkId가 비어 있습니다.");
+    return;
+  }
+
+  // 2. 서버 측 API Route(/api/links/click) 호출을 통해 서버에서 안전하게 처리
   try {
-    const linkDocRef = doc(db, USERS_COLLECTION, userId || ANONYMOUS_DOC, LINKS_SUBCOLLECTION, linkId);
+    if (typeof window !== "undefined") {
+      const response = await fetch("/api/links/click", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId, linkId }),
+      });
+
+      if (response.ok) {
+        return;
+      }
+      console.warn(
+        `[API] /api/links/click 응답 코드 ${response.status}, 클라이언트 Firestore SDK로 재시도합니다.`
+      );
+    }
+  } catch (apiErr) {
+    console.warn("[API] /api/links/click 호출 실패, 클라이언트 Firestore SDK로 폴백:", apiErr);
+  }
+
+  // 3. 클라이언트 직접 SDK 폴백: Firestore 원자적(atomic) increment(1)
+  try {
+    const linkDocRef = doc(db, USERS_COLLECTION, userId, LINKS_SUBCOLLECTION, linkId);
     await updateDoc(linkDocRef, {
       clickCount: increment(1),
       updatedAt: serverTimestamp(),
+      updated_at: serverTimestamp(),
     });
   } catch (err) {
-    console.warn(`[Firestore] users/${userId}/links/${linkId} clickCount 업데이트 실패:`, err);
+    console.error(
+      `[Firestore] users/${userId}/links/${linkId} 클릭 카운트(clickCount) 저장 실패:`,
+      err
+    );
   }
 }

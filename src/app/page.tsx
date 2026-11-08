@@ -14,6 +14,7 @@ import { Toast } from '@/components/toss/Toast';
 import { AddLinkDialog } from '@/components/AddLinkDialog';
 import { EditLinkDialog } from '@/components/EditLinkDialog';
 import { DeleteLinkDialog } from '@/components/DeleteLinkDialog';
+import { EditProfileDialog } from '@/components/EditProfileDialog';
 import { cn } from '@/lib/utils';
 import { MyLinkIntro } from '@/components/MyLinkIntro';
 import {
@@ -53,6 +54,7 @@ import {
   User as UserIcon,
   Info,
   Layers,
+  Pencil,
 } from 'lucide-react';
 
 type FilterCategory = 'all' | 'work' | 'sns' | 'shop' | 'contact';
@@ -116,6 +118,7 @@ export default function LinksPage() {
   const [deleteTarget, setDeleteTarget] = useState<LinkItem | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
 
   // UI 상태
   const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all');
@@ -138,6 +141,12 @@ export default function LinksPage() {
       setToastVisible(false);
     }, 2400);
   }, []);
+
+  // 프로필 수정 성공 콜백
+  const handleProfileUpdated = useCallback((updated: UserData) => {
+    setUserProfile(updated);
+    showToast('프로필 정보가 성공적으로 변경되었어요! ✨');
+  }, [showToast]);
 
   // ─── 1. Firebase onAuthStateChanged 실시간 인증 상태 감지 ───
   useEffect(() => {
@@ -401,9 +410,23 @@ export default function LinksPage() {
     return links.filter((link) => link.category === selectedCategory);
   }, [links, selectedCategory]);
 
-  // 링크 클릭 핸들러 (조회=누구나 가능)
+  // 링크 클릭 핸들러 (요구사항: 편집 모드가 아닐 때만 카운트 증가, 로그인 확인 및 실패 시 콘솔 에러)
   const handleLinkClick = useCallback(
-    (targetLink: LinkItem) => {
+    async (targetLink: LinkItem) => {
+      // 요구사항: 편집 모드(수정 다이얼로그, 추가 모달, 삭제 확인 중)일 때는 카운트가 증가하지 않음
+      if (editTarget || isAddDialogOpen || deleteTarget) {
+        return;
+      }
+
+      // 요구사항 3: 로그인 확인, 실패 시 콘솔 에러
+      if (!currentUser || !currentUser.uid) {
+        console.error(
+          `[클릭 카운트 에러] 로그인 확인 실패: 로그인이 되어 있지 않아 클릭 카운트를 Firestore에 저장할 수 없습니다. (linkId: "${targetLink.id}")`
+        );
+        return;
+      }
+
+      // 1. 낙관적 UI 업데이트 (클릭 즉시 화면에 +1 반영)
       setLinks((prev) =>
         prev.map((item) =>
           item.id === targetLink.id
@@ -411,11 +434,18 @@ export default function LinksPage() {
             : item
         )
       );
-      // 클릭수 증가 동기화
-      const activeUserId = currentUser ? currentUser.uid : 'anonymous';
-      incrementClickCountInFirestore(targetLink.id, activeUserId);
+
+      // 2. Firestore 'users/{userId}/links/{linkId}' 문서에 원자적으로 clickCount 필드 저장 (서버 안전 처리)
+      try {
+        await incrementClickCountInFirestore(targetLink.id, currentUser.uid);
+      } catch (error) {
+        console.error(
+          `[클릭 카운트 에러] Firestore users/${currentUser.uid}/links/${targetLink.id} 클릭 카운트 저장 실패:`,
+          error
+        );
+      }
     },
-    [currentUser]
+    [currentUser, editTarget, isAddDialogOpen, deleteTarget]
   );
 
   // 상단 공유하기
@@ -516,13 +546,21 @@ export default function LinksPage() {
           ) : currentUser ? (
             /* ── 요구사항 2: 로그인 상태 (사용자 이름 표시 + "로그아웃" 버튼) ── */
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 rounded-full bg-muted/60 pl-1.5 pr-3 py-1 border border-border/60">
+              <div
+                onClick={() => setIsProfileDialogOpen(true)}
+                title="프로필 수정하기"
+                className="flex items-center gap-2 rounded-full bg-muted/60 pl-1.5 pr-3 py-1 border border-border/60 hover:bg-muted/90 cursor-pointer transition-colors"
+              >
                 <Avatar className="size-6 rounded-full ring-1 ring-border">
-                  {currentUser.photoURL ? (
-                    <AvatarImage src={currentUser.photoURL} alt={userDisplayName} />
+                  {userProfile?.photoURL || currentUser.photoURL ? (
+                    <AvatarImage
+                      src={userProfile?.photoURL || currentUser.photoURL || ''}
+                      alt={userDisplayName}
+                      className="object-cover"
+                    />
                   ) : null}
                   <AvatarFallback className="text-[11px] bg-blue-600 text-white font-bold">
-                    {userDisplayName[0].toUpperCase()}
+                    {userDisplayName[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-xs font-bold text-foreground max-w-[90px] sm:max-w-[130px] truncate">
@@ -658,22 +696,43 @@ export default function LinksPage() {
         {/* ─── 프로필 섹션 (해당 경로의 유저 정보 화면 표시) ─── */}
         <section className="flex flex-col items-center text-center">
           {/* 아바타 */}
-          <div className="relative mb-3.5 inline-block">
-            <Avatar className="size-20 rounded-3xl ring-4 ring-background shadow-md">
-              {currentUser?.photoURL ? (
-                <AvatarImage src={currentUser.photoURL} alt={userDisplayName} />
+          <div className="relative mb-3.5 inline-block group">
+            <Avatar
+              onClick={() => (currentUser ? setIsProfileDialogOpen(true) : handleAuthRequired())}
+              className={cn(
+                'size-20 rounded-3xl ring-4 ring-background shadow-md transition-all',
+                currentUser && 'cursor-pointer hover:ring-blue-300 dark:hover:ring-blue-700 hover:scale-105'
+              )}
+              title={currentUser ? '클릭하여 프로필 수정' : undefined}
+            >
+              {userProfile?.photoURL || currentUser?.photoURL ? (
+                <AvatarImage
+                  src={userProfile?.photoURL || currentUser?.photoURL || ''}
+                  alt={userDisplayName}
+                />
               ) : null}
               <AvatarFallback className="rounded-3xl bg-gradient-to-br from-blue-600 via-blue-500 to-sky-400 text-3xl text-white font-bold">
-                {currentUser ? userDisplayName[0].toUpperCase() : '🎨'}
+                {currentUser ? userDisplayName[0]?.toUpperCase() : '🎨'}
               </AvatarFallback>
             </Avatar>
-            {/* 공식 인증 또는 로그인 체크 뱃지 */}
-            <div
-              className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs ring-2 ring-background"
-              title={currentUser ? '인증된 사용자' : '공식 데모 계정'}
-            >
-              <Check className="size-3.5 stroke-[3]" />
-            </div>
+            {/* 공식 인증 또는 수정 뱃지 */}
+            {currentUser ? (
+              <button
+                type="button"
+                onClick={() => setIsProfileDialogOpen(true)}
+                title="프로필 수정하기"
+                className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs ring-2 ring-background hover:bg-blue-700 cursor-pointer transition-transform hover:scale-110"
+              >
+                <Pencil className="size-3 stroke-[2.5]" />
+              </button>
+            ) : (
+              <div
+                className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs ring-2 ring-background"
+                title="공식 데모 계정"
+              >
+                <Check className="size-3.5 stroke-[3]" />
+              </div>
+            )}
           </div>
 
           {/* 작가/사용자 이름 및 핸들 (users/{user.uid} 정보 표시) */}
@@ -684,6 +743,17 @@ export default function LinksPage() {
             <span className="text-[14px] font-semibold text-muted-foreground">
               {currentUser ? '(내 링크)' : '(꺄륵)'}
             </span>
+            {currentUser && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsProfileDialogOpen(true)}
+                title="프로필 수정"
+                className="size-7 rounded-full text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 cursor-pointer"
+              >
+                <Pencil className="size-3.5" />
+              </Button>
+            )}
           </div>
 
           <p className="mt-1 text-xs font-medium text-muted-foreground font-mono">
@@ -714,6 +784,17 @@ export default function LinksPage() {
 
           {/* 빠른 액션 칩스 */}
           <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2">
+            {currentUser && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsProfileDialogOpen(true)}
+                className="rounded-full text-xs font-bold gap-1.5 h-8 px-3.5 border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-300 cursor-pointer shadow-xs"
+              >
+                <Pencil className="size-3.5 text-blue-600 dark:text-blue-400" />
+                <span>프로필 수정</span>
+              </Button>
+            )}
             <Button
               variant={isCopied ? 'default' : 'secondary'}
               size="sm"
@@ -873,6 +954,7 @@ export default function LinksPage() {
                 onEditRequest={(link) => setEditTarget(link)}
                 onDeleteRequest={handleDeleteRequest}
                 isDeleting={deletingId === link.id}
+                isEditing={editTarget?.id === link.id}
                 canEdit={!!currentUser}
                 onAuthRequired={handleAuthRequired}
               />
@@ -920,6 +1002,15 @@ export default function LinksPage() {
         link={deleteTarget}
         onConfirm={handleConfirmDelete}
         isDeleting={isDeleting}
+      />
+
+      {/* ─── 프로필 수정 다이얼로그 (Display Name 중복 확인 포함) ─── */}
+      <EditProfileDialog
+        open={isProfileDialogOpen}
+        onOpenChange={setIsProfileDialogOpen}
+        userProfile={userProfile}
+        currentUser={currentUser}
+        onProfileUpdated={handleProfileUpdated}
       />
 
       {/* ─── 토스트 알림 ─── */}

@@ -57,6 +57,7 @@ interface LinkCardProps {
   canEdit?: boolean;
   onAuthRequired?: () => void;
   className?: string;
+  isEditing?: boolean;
 }
 
 export function LinkCard({
@@ -69,8 +70,10 @@ export function LinkCard({
   canEdit = true,
   onAuthRequired,
   className,
+  isEditing: isEditingProp,
 }: LinkCardProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [internalIsEditing, setInternalIsEditing] = useState(false);
+  const isEditing = Boolean(isEditingProp || internalIsEditing);
   const [editTitle, setEditTitle] = useState(link.title);
   const [editUrl, setEditUrl] = useState(link.url);
   const [errors, setErrors] = useState<{ title?: string; url?: string }>({});
@@ -121,7 +124,7 @@ export function LinkCard({
     setEditTitle(link.title);
     setEditUrl(link.url);
     setErrors({});
-    setIsEditing(true);
+    setInternalIsEditing(true);
   };
 
   const handleCancelEdit = (e: React.MouseEvent) => {
@@ -131,7 +134,7 @@ export function LinkCard({
     setEditTitle(link.title);
     setEditUrl(link.url);
     setErrors({});
-    setIsEditing(false);
+    setInternalIsEditing(false);
   };
 
   const handleSaveEdit = async (e: React.MouseEvent | React.FormEvent) => {
@@ -148,7 +151,7 @@ export function LinkCard({
           url: normalizeUrl(editUrl.trim()),
         });
       }
-      setIsEditing(false);
+      setInternalIsEditing(false);
     } catch (err) {
       console.error('링크 저장 실패:', err);
     } finally {
@@ -168,12 +171,18 @@ export function LinkCard({
     }
   };
 
-  const handleOpenLink = () => {
+  const handleOpenLink = (e?: React.MouseEvent) => {
     if (isEditing) return;
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    // 1. 링크 버튼 클릭 시 클릭 감지
     if (onClick) {
       onClick(link);
     }
-    if (typeof window !== 'undefined') {
+    // 4. 링크는 새 탭으로 열림 (target='_blank')
+    if (typeof window !== 'undefined' && link.url) {
       window.open(link.url, '_blank', 'noopener,noreferrer');
     }
   };
@@ -358,14 +367,15 @@ export function LinkCard({
           </p>
         )}
 
-        {/* 클릭수 및 수정 시각 지표 */}
-        <div className="mt-1 flex items-center gap-2 text-[11px] font-medium text-muted-foreground flex-wrap">
-          {typeof link.clickCount === 'number' && (
-            <div className="flex items-center gap-1">
-              <Eye className="size-3 text-muted-foreground/80" />
-              <span>{link.clickCount.toLocaleString()}회 클릭</span>
-            </div>
-          )}
+        {/* 조회수(아이콘과 숫자만 표시) 및 수정 시각 지표 */}
+        <div className="mt-1.5 flex items-center gap-2 text-[11px] font-medium text-muted-foreground flex-wrap">
+          <span
+            title={`조회수: ${(link.clickCount ?? 0).toLocaleString()}회`}
+            className="inline-flex items-center gap-1 rounded-md bg-blue-50/80 px-2 py-0.5 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-semibold border border-blue-100 dark:border-blue-900/50"
+          >
+            <Eye className="size-3 text-blue-600 dark:text-blue-400" />
+            <span>{(link.clickCount ?? 0).toLocaleString()}</span>
+          </span>
           {formatUpdatedAt(link.updated_at) && (
             <div
               className="flex items-center gap-1 text-[10px] text-muted-foreground/80"
@@ -420,15 +430,28 @@ export function LinkCard({
           </button>
         )}
 
-        {/* 새 창 열기 버튼 (항상 표시) */}
-        <div
-          onClick={handleOpenLink}
-          title="링크 열기"
-          aria-label="링크 열기"
-          className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-all duration-200 group-hover:bg-blue-600 group-hover:text-white group-hover:translate-x-0.5 cursor-pointer ml-0.5"
+        {/* 새 창 열기 버튼 (항상 표시, target='_blank') */}
+        <a
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => {
+            if (isEditing) {
+              e.preventDefault();
+              e.stopPropagation();
+              return;
+            }
+            handleOpenLink(e);
+          }}
+          title="새 탭으로 열기"
+          aria-label="새 탭으로 열기"
+          className={cn(
+            "flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-all duration-200 group-hover:bg-blue-600 group-hover:text-white group-hover:translate-x-0.5 cursor-pointer ml-0.5",
+            isEditing && "pointer-events-none opacity-50"
+          )}
         >
           <ExternalLink className="size-3.5" />
-        </div>
+        </a>
       </div>
     </Card>
   );
