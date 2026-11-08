@@ -6,7 +6,7 @@ import Link from 'next/link';
 import type { User } from 'firebase/auth';
 import type { UserData } from '@/lib/authService';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
@@ -17,6 +17,7 @@ import {
   ChevronDown,
   Eye,
   Sparkles,
+  BarChart3,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -244,6 +245,23 @@ export function Header({
                   </div>
                 </Link>
 
+                {/* 통계 대시보드 페이지 이동 (/stats) */}
+                <Link
+                  href="/stats"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-foreground hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40 transition-colors"
+                >
+                  <span className="flex size-6 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50">
+                    <BarChart3 className="size-3.5" />
+                  </span>
+                  <div className="flex flex-col text-left flex-1 min-w-0">
+                    <span className="font-bold">통계 대시보드</span>
+                    <span className="text-[10px] text-muted-foreground truncate font-mono">
+                      /stats
+                    </span>
+                  </div>
+                </Link>
+
                 <div className="h-px bg-border/70 my-1" />
 
                 {/* 로그아웃 버튼 */}
@@ -301,6 +319,7 @@ export function Header({
             <RefreshCw className={cn('size-3 sm:size-3.5', isSyncing && 'animate-spin text-blue-600')} />
           </Button>
         )}
+
 
         {/* 새 링크 추가 버튼 */}
         {onOpenAddDialog && (

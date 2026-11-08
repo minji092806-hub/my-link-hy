@@ -7,14 +7,35 @@ service cloud.firestore {
     // 헬퍼 함수 (Helper Functions)
     // ==========================================
     
-    // 로그인 여부 확인
+    // 1. 로그인 여부 확인
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // 본인 여부 확인
+    // 2. 문서 소유자(본인) 여부 확인
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 3. 링크 클릭 카운트(clickCount) 원자적 업데이트 유효성 검증
+    // - clickCount, updatedAt, updated_at 필드만 변경 허용 (화이트리스트)
+    // - clickCount는 0 이상의 숫자(number)여야 함
+    // - 이전 값보다 감소하는 변조 차단
+    function isValidClickCountUpdate() {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      return affected.hasOnly(['clickCount', 'updatedAt', 'updated_at'])
+        && request.resource.data.clickCount is number
+        && request.resource.data.clickCount >= 0
+        && (!('clickCount' in resource.data) || request.resource.data.clickCount >= resource.data.clickCount);
+    }
+
+    // 4. 프로필 조회수(totalViews) 원자적 업데이트 유효성 검증
+    function isValidTotalViewsUpdate() {
+      let affected = request.resource.data.diff(resource.data).affectedKeys();
+      return affected.hasOnly(['totalViews', 'updatedAt', 'updated_at'])
+        && request.resource.data.totalViews is number
+        && request.resource.data.totalViews >= 0
+        && (!('totalViews' in resource.data) || request.resource.data.totalViews >= resource.data.totalViews);
     }
 
     // ==========================================
@@ -28,13 +49,13 @@ service cloud.firestore {
       allow create: if isOwner(userId)
                     && request.resource.data.uid == userId;
 
-      // [수정] 본인 프로필 수정 OR 방문자 조회수(totalViews) 증가
+      // [수정] 본인 프로필 수정 OR 방문자의 조회수(totalViews) 증가
       allow update: if (
         // 1) 본인 수정: UID 필드 변조 방지 및 유효성 검사
         (isOwner(userId) && request.resource.data.uid == resource.data.uid)
         ||
-        // 2) 방문자 프로필 방문 시: totalViews만 증가시키는 업데이트 허용 (선택적)
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['totalViews', 'updatedAt']))
+        // 2) 방문자 프로필 방문 시: totalViews만 안전하게 증가시키는 업데이트 허용
+        isValidTotalViewsUpdate()
       );
 
       // [삭제] 본인 계정만 삭제 가능
@@ -42,7 +63,6 @@ service cloud.firestore {
 
       // ------------------------------------------
       // 1-1. 프로필 서브컬렉션 (users/{userId}/profile/{docId})
-      // * 프로필을 서브컬렉션으로 분리 설계한 경우 대비
       // ------------------------------------------
       match /profile/{docId} {
         allow read: if true;
@@ -56,19 +76,23 @@ service cloud.firestore {
         // [읽기] 누구나 링크 목록 조회 가능
         allow read: if true;
 
-        // [생성] 본인만 링크 추가 가능 + 필수 데이터 검증
+        // [생성] 본인만 링크 추가 가능 + 필수 데이터 무결성 검증
         allow create: if isOwner(userId)
                       && request.resource.data.title is string
+                      && request.resource.data.title.size() >= 1
                       && request.resource.data.title.size() <= 100
-                      && request.resource.data.url is string;
+                      && request.resource.data.url is string
+                      && request.resource.data.url.size() >= 1;
 
-        // [수정] 본인의 링크 편집 OR 방문자의 클릭 카운트(clickCount) 증가
+        // [수정] 본인의 링크 편집 OR 방문자/서버의 원자적 클릭 카운트(clickCount) 증가
         allow update: if (
-          // 1) 본인 링크 내용 수정
-          isOwner(userId)
+          // 1) 본인 링크 내용 수정 (title, url 타입 및 길이 검증)
+          (isOwner(userId)
+           && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() <= 100))
+           && (!('url' in request.resource.data) || request.resource.data.url is string))
           ||
-          // 2) 비로그인 방문자가 링크를 클릭했을 때 clickCount / updatedAt 필드만 업데이트 허용
-          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clickCount', 'updatedAt', 'updated_at']))
+          // 2) 링크 클릭 시: clickCount 및 타임스탬프 필드만 안전하게 증가
+          isValidClickCountUpdate()
         );
 
         // [삭제] 본인만 링크 삭제 가능

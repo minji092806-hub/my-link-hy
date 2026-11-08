@@ -1,4 +1,4 @@
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import type { LinkItem } from "@/types";
 import {
   collection,
@@ -211,12 +211,16 @@ export async function deleteLinkFromFirestore(
  */
 export async function incrementClickCountInFirestore(
   linkId: string,
-  userId: string
+  userId?: string
 ): Promise<void> {
   // 1. 로그인 확인 (로그인되지 않은 경우 콘솔 에러 출력 후 중단)
-  if (!userId || userId.trim() === "" || userId === ANONYMOUS_DOC) {
+  const resolvedUserId = (userId && userId.trim() !== "" && userId !== ANONYMOUS_DOC)
+    ? userId.trim()
+    : auth.currentUser?.uid;
+
+  if (!resolvedUserId) {
     console.error(
-      `[Firestore] 로그인 확인 실패: 로그인된 유저 ID가 없어 클릭 카운트를 저장할 수 없습니다. (userId: "${userId}", linkId: "${linkId}")`
+      `[Firestore] 로그인 확인 실패: 로그인이 되어 있지 않아 클릭 카운트를 저장할 수 없습니다. (linkId: "${linkId}", userId: "${userId ?? 'undefined'}")`
     );
     return;
   }
@@ -234,7 +238,7 @@ export async function incrementClickCountInFirestore(
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ userId, linkId }),
+        body: JSON.stringify({ userId: resolvedUserId, linkId: linkId.trim() }),
       });
 
       if (response.ok) {
@@ -250,7 +254,7 @@ export async function incrementClickCountInFirestore(
 
   // 3. 클라이언트 직접 SDK 폴백: Firestore 원자적(atomic) increment(1)
   try {
-    const linkDocRef = doc(db, USERS_COLLECTION, userId, LINKS_SUBCOLLECTION, linkId);
+    const linkDocRef = doc(db, USERS_COLLECTION, resolvedUserId, LINKS_SUBCOLLECTION, linkId.trim());
     await updateDoc(linkDocRef, {
       clickCount: increment(1),
       updatedAt: serverTimestamp(),
@@ -258,7 +262,7 @@ export async function incrementClickCountInFirestore(
     });
   } catch (err) {
     console.error(
-      `[Firestore] users/${userId}/links/${linkId} 클릭 카운트(clickCount) 저장 실패:`,
+      `[Firestore] users/${resolvedUserId}/links/${linkId} 클릭 카운트(clickCount) 저장 실패:`,
       err
     );
   }

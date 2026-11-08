@@ -425,8 +425,8 @@ export default function LinksPage() {
   // 링크 클릭 핸들러 (요구사항: 편집 모드가 아닐 때만 카운트 증가, 로그인 확인 및 실패 시 콘솔 에러)
   const handleLinkClick = useCallback(
     async (targetLink: LinkItem) => {
-      // 요구사항: 편집 모드(수정 다이얼로그, 추가 모달, 삭제 확인 중)일 때는 카운트가 증가하지 않음
-      if (editTarget || isAddDialogOpen || deleteTarget) {
+      // 요구사항: 편집 모드(수정 다이얼로그, 추가 모달, 삭제 확인 중, 프로필 편집 등)일 때는 카운트가 증가하지 않음
+      if (editTarget || isAddDialogOpen || deleteTarget || isProfileDialogOpen) {
         return;
       }
 
@@ -457,7 +457,7 @@ export default function LinksPage() {
         );
       }
     },
-    [currentUser, editTarget, isAddDialogOpen, deleteTarget]
+    [currentUser, editTarget, isAddDialogOpen, deleteTarget, isProfileDialogOpen]
   );
 
   // 상단 공유하기

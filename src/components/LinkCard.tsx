@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { LinkItem } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -79,11 +79,13 @@ export function LinkCard({
   const [errors, setErrors] = useState<{ title?: string; url?: string }>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  // link 데이터가 업데이트되면 편집용 기본값도 동기화
-  useEffect(() => {
+  // link prop 변경 시 편집 필드 상태 동기화 (React 공식 권장 렌더 단계 패턴)
+  const [prevLink, setPrevLink] = useState(link);
+  if (link.title !== prevLink.title || link.url !== prevLink.url) {
+    setPrevLink(link);
     setEditTitle(link.title);
     setEditUrl(link.url);
-  }, [link.title, link.url]);
+  }
 
   // 입력 검증 (추가할 때와 동일한 기준: 필수, 길이, URL 형식)
   const validate = (): boolean => {
@@ -367,11 +369,11 @@ export function LinkCard({
           </p>
         )}
 
-        {/* 조회수(아이콘과 숫자만 표시) 및 수정 시각 지표 */}
+        {/* 조회수(텍스트 없이 아이콘과 숫자만 표시) 및 수정 시각 지표 */}
         <div className="mt-1 xs:mt-1.5 flex items-center gap-1.5 xs:gap-2 text-[10px] sm:text-[11px] font-medium text-muted-foreground flex-wrap">
           <span
             title={`조회수: ${(link.clickCount ?? 0).toLocaleString()}회`}
-            className="inline-flex items-center gap-1 rounded-md bg-blue-50/80 px-1.5 py-0.2 sm:px-2 sm:py-0.5 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-semibold border border-blue-100 dark:border-blue-900/50"
+            className="inline-flex items-center gap-1 rounded-md bg-blue-50/80 px-1.5 py-0.5 sm:px-2 sm:py-0.5 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-semibold border border-blue-100 dark:border-blue-900/50"
           >
             <Eye className="size-2.5 sm:size-3 text-blue-600 dark:text-blue-400" />
             <span>{(link.clickCount ?? 0).toLocaleString()}</span>

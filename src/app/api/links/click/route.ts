@@ -10,8 +10,8 @@ import { doc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { userId, linkId } = body;
+    const body = await request.json().catch(() => ({}));
+    const { userId, linkId } = body || {};
 
     // 1. 유효성 검증 및 로그인 확인
     if (!userId || typeof userId !== 'string' || userId.trim() === '' || userId === 'anonymous') {

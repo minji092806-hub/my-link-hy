@@ -402,9 +402,15 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
   // 링크 클릭 핸들러 (모든 방문자 클릭 카운트 증가 처리)
   const handleLinkClick = useCallback(
     async (targetLink: LinkItem) => {
-      if (editTarget || isAddDialogOpen || deleteTarget) return;
+      // 편집 모드(수정 다이얼로그, 추가 모달, 삭제 확인 중, 프로필 편집 등)일 때는 카운트 증가 방지
+      if (editTarget || isAddDialogOpen || deleteTarget || isProfileDialogOpen) return;
 
-      if (!targetUser?.uid) return;
+      if (!targetUser?.uid) {
+        console.error(
+          `[클릭 카운트 에러] 링크 소유자 확인 실패: 유효한 userId가 없어 클릭 카운트를 저장할 수 없습니다. (linkId: "${targetLink.id}")`
+        );
+        return;
+      }
 
       // 1. 낙관적 업데이트
       setLinks((prev) =>
@@ -422,7 +428,7 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
         console.error('클릭 카운트 저장 실패:', err);
       }
     },
-    [editTarget, isAddDialogOpen, deleteTarget, targetUser]
+    [editTarget, isAddDialogOpen, deleteTarget, isProfileDialogOpen, targetUser]
   );
 
   // 프로필 링크 복사 & 공유
