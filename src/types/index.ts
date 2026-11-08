@@ -11,6 +11,7 @@ export interface LinkItem {
   clickCount?: number;
   category?: "work" | "sns" | "shop" | "contact";
   createdAt?: unknown;
+  updated_at?: unknown;
 }
 
 export interface UserProfile {

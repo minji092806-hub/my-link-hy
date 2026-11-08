@@ -48,6 +48,7 @@ function mapDocToLinkItem(id: string, data: DocumentData): LinkItem {
     clickCount: typeof data.clickCount === "number" ? data.clickCount : 0,
     category: data.category || "work",
     createdAt: data.createdAt,
+    updated_at: data.updated_at || data.updatedAt || undefined,
   };
 }
 
@@ -76,6 +77,7 @@ export async function addLinkToFirestore(
     clickCount: newLink.clickCount ?? 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
+    updated_at: serverTimestamp(),
   };
 
   if (newLink.description && newLink.description.trim()) {
@@ -101,6 +103,7 @@ export async function addLinkToFirestore(
     description: (docPayload.description as string) || undefined,
     badge: (docPayload.badge as string) || undefined,
     createdAt: new Date(),
+    updated_at: new Date(),
   };
 }
 
@@ -153,6 +156,7 @@ export async function updateLinkInFirestore(
   const linkDocRef = doc(db, USERS_COLLECTION, ANONYMOUS_DOC, LINKS_SUBCOLLECTION, linkId);
   const docPayload: Record<string, unknown> = {
     updatedAt: serverTimestamp(),
+    updated_at: serverTimestamp(),
   };
 
   if (updates.title !== undefined) {

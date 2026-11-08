@@ -16,9 +16,36 @@ import {
   Check,
   X,
   AlertCircle,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isValidUrl, normalizeUrl } from '@/components/AddLinkDialog';
+
+function formatUpdatedAt(val: unknown): string | null {
+  if (!val) return null;
+  let date: Date | null = null;
+  if (val instanceof Date) {
+    date = val;
+  } else if (
+    typeof val === 'object' &&
+    val !== null &&
+    'toDate' in val &&
+    typeof (val as { toDate: () => Date }).toDate === 'function'
+  ) {
+    date = (val as { toDate: () => Date }).toDate();
+  } else if (typeof val === 'string' || typeof val === 'number') {
+    date = new Date(val);
+  }
+  if (!date || isNaN(date.getTime())) return null;
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
+}
 
 interface LinkCardProps {
   link: LinkItem;
@@ -312,13 +339,24 @@ export function LinkCard({
           </p>
         )}
 
-        {/* 클릭수 및 지표 */}
-        {typeof link.clickCount === 'number' && (
-          <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-            <Eye className="size-3 text-muted-foreground/80" />
-            <span>{link.clickCount.toLocaleString()}회 클릭</span>
-          </div>
-        )}
+        {/* 클릭수 및 수정 시각 지표 */}
+        <div className="mt-1 flex items-center gap-2 text-[11px] font-medium text-muted-foreground flex-wrap">
+          {typeof link.clickCount === 'number' && (
+            <div className="flex items-center gap-1">
+              <Eye className="size-3 text-muted-foreground/80" />
+              <span>{link.clickCount.toLocaleString()}회 클릭</span>
+            </div>
+          )}
+          {formatUpdatedAt(link.updated_at) && (
+            <div
+              className="flex items-center gap-1 text-[10px] text-muted-foreground/80"
+              title={`마지막 수정: ${formatUpdatedAt(link.updated_at)}`}
+            >
+              <Clock className="size-3 text-muted-foreground/70" />
+              <span>수정 {formatUpdatedAt(link.updated_at)}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 우측 액션: 수정 버튼 + 삭제 버튼 + 외부 이동 버튼 (항상 표시) */}

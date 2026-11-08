@@ -158,11 +158,11 @@ export default function LinksPage() {
     async (linkId: string, updates: { title: string; url: string }) => {
       setIsSyncing(true);
       try {
-        // UI 즉각적인 낙관적 반영
+        // UI 즉각적인 낙관적 반영 (수정 시각 updated_at 포함)
         setLinks((prev) =>
           prev.map((item) =>
             item.id === linkId
-              ? { ...item, title: updates.title, url: updates.url }
+              ? { ...item, title: updates.title, url: updates.url, updated_at: new Date() }
               : item
           )
         );
