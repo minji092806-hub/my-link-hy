@@ -8,6 +8,8 @@ export interface LinkItem {
   isActive: boolean;
   color?: "yellow" | "pink" | "cyan" | "lime" | "purple" | "white";
   badge?: string;
+  clickCount?: number;
+  category?: "work" | "sns" | "shop" | "contact";
 }
 
 export interface UserProfile {

@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: "김민지 (꺄륵) ✦ 공식 프로필 & 링크",
@@ -12,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className="h-full antialiased">
+    <html lang="ko" className={cn("h-full antialiased", "font-sans", geist.variable)}>
       <head>
         {/* Pretendard Variable — Toss Product Sans 무료 대체 서체 */}
         <link

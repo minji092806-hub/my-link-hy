@@ -1,9 +1,9 @@
 # 📄 [PRD] 마이링크 (My Link) 기능 정의서
 
-> **문서 버전**: v1.0.0  
+> **문서 버전**: v1.1.0  
 > **작성일자**: 2026-11-08  
 > **프로젝트 유형**: Next.js + Firebase 기반 멀티유저 링크트리(Linktree) 클론 SaaS  
-> **디자인 콘셉트**: 토스 디자인 시스템(TDS) 기반의 모던·미니멀 UI  
+> **디자인 콘셉트**: shadcn/ui 기반 컴포넌트 시스템 및 토스 디자인 시스템(TDS) 스타일의 모던·미니멀 UI  
 
 ---
 
@@ -15,7 +15,7 @@
 ### 1.2 기획 배경 및 핵심 가치
 - **원스톱 링크 제공**: 인스타그램 등 프로필에 단 1개의 URL만 등록 가능한 SNS의 제약을 극복합니다.
 - **실시간 편집 경험**: 좌측 편집 패널에서 수정하는 즉시 우측의 가상 스마트폰 목업에서 실시간 반영되는 WYSIWYG 형태의 직관적인 사용자 경험(UX)을 제공합니다.
-- **신뢰와 미니멀리즘**: 토스 디자인 시스템(TDS) 감성의 정돈된 UI와 인터랙션을 기본으로 채택하여 가독성과 심미성을 극대화합니다.
+- **표준 컴포넌트 & 미니멀리즘**: `shadcn/ui` 기반의 검증된 접근성과 토스 디자인 시스템(TDS) 감성의 정돈된 UI/인터랙션을 결합하여 가독성과 심미성을 극대화합니다.
 - **성장 분석**: 총 방문자 수와 링크별 클릭 수를 추적하여 어떤 콘텐츠가 가장 인기 있는지 확인할 수 있습니다.
 
 ---
@@ -54,8 +54,8 @@ flowchart LR
 | :--- | :--- | :--- |
 | **Frontend Framework** | **Next.js 15 (App Router)** | 서버 컴포넌트(RSC)를 활용한 빠른 초기 로딩 및 동적 라우팅(`/[username]`) 지원 |
 | **Language** | **TypeScript** | 안정적인 타입 안전성 및 개발 생산성 향상 |
-| **Styling** | **Tailwind CSS** | 빠르고 일관된 유틸리티 퍼스트 스타일링 및 디자인 토큰 연동 |
-| **Design System** | **TDS (Toss Design System) Guideline** | 심플하고 직관적인 한국형 미니멀 UI/UX 구현 (`design.md` 토큰 활용) |
+| **Styling** | **Tailwind CSS (100% 통일)** | 모든 페이지 및 컴포넌트의 스타일을 Tailwind CSS로 100% 일원화하여 일관된 유틸리티 퍼스트 스타일링 및 유지보수성 극대화 |
+| **Design System & UI Library** | **shadcn/ui (최신) + TDS 스타일** | 접근성과 확장성이 보장된 `shadcn/ui` 컴포넌트 아키텍처를 토대로 토스 디자인 시스템(TDS) 감성의 미니멀 UI/UX 구현 |
 | **Auth** | **Firebase Authentication** | 구글 간편로그인, 카카오 소셜 로그인, 이메일/비밀번호 인증 원스톱 지원 |
 | **Database** | **Cloud Firestore** | NoSQL 실시간 문서형 데이터베이스로 빠른 CRUD 및 실시간 동기화 지원 |
 | **Storage** | **Firebase Storage** | 프로필 이미지(아바타) 업로드 및 CDN 서빙 |
@@ -363,24 +363,53 @@ flowchart TD
         └── updatedAt: Timestamp
 ```
 
+### 5.1 초기 개발 및 테스트용 기본 더미 데이터 명세 (Mock / Seed Data)
+프론트엔드 UI 프로토타이핑, 실시간 목업 프리뷰 검증 및 신규 회원 온보딩 시 기본 시드(Seed) 데이터로 사용되는 더미 링크 데이터셋입니다.
+
+- **데이터 소스 파일**: `src/data/links.ts` (타입 정의: `src/types/index.ts`의 `LinkItem`)
+- **적용 대상**: 대시보드 2열 프리뷰(`useEditorStore`), 공개 프로필 페이지(`/[username]`), 컴포넌트(`LinkCard`, `ListRow`)
+- **더미 데이터 항목 구성**:
+
+| ID | 제목 (Title) | 연결 URL | 설명 (Description) | 아이콘 | 순서 | 뱃지 | 테마 컬러 |
+| :--- | :--- | :--- | :--- | :---: | :---: | :---: | :---: |
+| `link-1` | 네이버 웹툰 공식 연재처 | `https://comic.naver.com/webtoon` | 매주 화·목 정기 연재 중! 최신화 바로 보러가기 | 📖 | 1 | `연재중` | `lime` |
+| `link-2` | 공식 인스타그램 | `https://instagram.com` | 작업 비하인드 컷, 러프 스케치 및 일상 공유 | 📸 | 2 | `DAILY` | `pink` |
+| `link-3` | 공식 굿즈 스마트스토어 | `https://smartstore.naver.com` | 아크릴 키링, 엽서팩, 스티커 등 공식 굿즈 판매 | 🛍️ | 3 | `NEW` | `yellow` |
+| `link-4` | 노션 온라인 포트폴리오 | `https://notion.site` | 외주 이력, 캐릭터 디자인 시트 및 브랜드 협업 아카이브 | 📂 | 4 | - | `cyan` |
+| `link-5` | 유튜브 채널 (드로잉 & 브이로그) | `https://youtube.com` | 웹툰 마감 타임랩스 및 작업실 일상 브이로그 | 🎬 | 5 | - | `white` |
+| `link-6` | 팬 커뮤니티 (오픈카톡/디스코드) | `https://open.kakao.com` | 독자님들과 소통하고 스포일러 없는 잡담을 나누는 공간 | 💬 | 6 | `팬전용` | `purple` |
+| `link-7` | 작가 응원 & 커피 한 잔 후원 | `https://toss.me` | 따뜻한 응원 메시지와 커피 한 잔 선물하기 ☕ | ☕ | 7 | - | `yellow` |
+| `link-8` | 비즈니스 & 외주 문의 | `mailto:contact@kkyareuk.com` | 출판, 일러스트 외주, 광고/콜라보 제휴 문의 메일 | 💌 | 8 | - | `white` |
+
 ---
 
-## 6. 디자인 가이드라인 (TDS - Toss Design System 스타일)
 
-- **주요 색상 토큰**:
-  - `Brand Primary`: `#3182F6` (Toss Blue)
-  - `Text Primary`: `#191F28` (Grey-900)
-  - `Text Secondary`: `#4E5968` (Grey-700)
-  - `Background`: `#F9FAFB` (Grey-50)
-  - `Surface (Card)`: `#FFFFFF` (White)
-  - `Border / Divider`: `#E5E8EB` (Grey-200)
+## 6. 디자인 가이드라인 (shadcn/ui 기반 + TDS 스타일)
+
+### 6.1 컴포넌트 아키텍처 원칙 (shadcn/ui 기반)
+- **표준 컴포넌트 라이브러리**: 앞으로 추가되는 모든 UI 컴포넌트는 `shadcn/ui`(CLI v4, `@base-ui/react`, Radix/Base UI 프리미티브, `lucide-react`)를 기본으로 구성합니다.
+  - 신규 컴포넌트 추가 시: `cmd /c "npx shadcn@latest add <component-name>"` 사용
+  - 컴포넌트 위치: `src/components/ui/`에 shadcn 표준 구조로 배치
+  - 유틸리티: `src/lib/utils.ts`의 `cn()`을 통해 조건부 클래스 병합 및 Tailwind CVA(`class-variance-authority`) 패턴 일관 적용
+- **접근성(a11y) & 상태 관리**: 키보드 내비게이션, ARIA 속성, 포커스 링(`focus-visible:ring-*`), 모달 및 드롭다운의 포커스 트랩을 shadcn/ui 표준 프리미티브로 완벽 보장합니다.
+
+### 6.2 토스 디자인 시스템(TDS) 스타일 믹스인
+shadcn/ui의 컴포넌트 구조 위에 토스(Toss) 특유의 부드럽고 직관적인 비주얼 언어를 테마 토큰 및 유틸리티로 결합합니다.
+
+- **주요 색상 토큰 (globals.css 연동)**:
+  - `Brand Primary`: `#3182F6` (Toss Blue, shadcn `--primary`와 매핑)
+  - `Text Primary`: `#191F28` (Grey-900, shadcn `--foreground`)
+  - `Text Secondary`: `#4E5968` (Grey-700, shadcn `--muted-foreground`)
+  - `Background`: `#F9FAFB` (Grey-50, shadcn `--background`)
+  - `Surface (Card)`: `#FFFFFF` (White, shadcn `--card`)
+  - `Border / Divider`: `#E5E8EB` (Grey-200, shadcn `--border`)
 - **타이포그래피**:
-  - `Pretendard` 또는 `Geist Sans` 폰트 적용
+  - `Pretendard` / `Geist Sans` 적용
   - 명확한 계층 구조: 제목 20~24px Bold, 본문 15~16px Medium, 캡션 12~13px Regular
-- **컴포넌트 특징**:
-  - 버튼/카드 둥근 모서리: `rounded-2xl` (16px) 또는 `rounded-3xl` (24px)
+- **컴포넌트 인터랙션 특징**:
+  - 버튼/카드 둥근 모서리: 기본 `rounded-xl` / `rounded-2xl` 적용 (`--radius: 0.625rem`)
   - 클릭/터치 반응: 누를 때 살짝 축소되는 마이크로 인터랙션 (`active:scale-[0.98] transition-all`)
-  - 토스트/모달: 부드러운 페이드인 및 스프링 애니메이션
+  - 토스트/모달: shadcn `sonner`/`dialog`를 바탕으로 부드러운 페이드인 및 스프링 인터랙션 적용
 
 ---
 

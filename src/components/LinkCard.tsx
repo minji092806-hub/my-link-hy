@@ -1,67 +1,95 @@
-import React from "react";
-import type { LinkItem } from "@/types";
+'use client';
+
+import * as React from 'react';
+import type { LinkItem } from '@/types';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Eye, ExternalLink } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface LinkCardProps {
   link: LinkItem;
+  onClick?: (link: LinkItem) => void;
+  className?: string;
 }
 
-const COLOR_MAP: Record<string, string> = {
-  yellow: "bg-[#FFDE59] hover:bg-[#FFE57A]",
-  pink: "bg-[#FF70A6] hover:bg-[#FF85B3]",
-  cyan: "bg-[#70D6FF] hover:bg-[#8AE0FF]",
-  lime: "bg-[#B7EF83] hover:bg-[#C5F496]",
-  purple: "bg-[#D8BBFF] hover:bg-[#E3CEFF]",
-  white: "bg-white hover:bg-neutral-50",
-};
+export function LinkCard({ link, onClick, className }: LinkCardProps) {
+  const handleClick = () => {
+    if (onClick) {
+      onClick(link);
+    }
+  };
 
-export function LinkCard({ link }: LinkCardProps) {
-  const bgClass = (link.color && COLOR_MAP[link.color]) || COLOR_MAP.white;
-  const formattedIndex = String(link.order).padStart(2, "0");
+  const getBadgeVariant = (badge?: string): 'success' | 'blue' | 'pink' | 'purple' | 'secondary' => {
+    switch (badge) {
+      case '연재중':
+        return 'success';
+      case 'NEW':
+        return 'blue';
+      case 'DAILY':
+        return 'pink';
+      case '팬전용':
+        return 'purple';
+      default:
+        return 'secondary';
+    }
+  };
 
   return (
     <a
       href={link.url}
-      target={link.url.startsWith("http") ? "_blank" : undefined}
-      rel={link.url.startsWith("http") ? "noopener noreferrer" : undefined}
-      className={`group relative flex items-center justify-between w-full p-2.5 sm:p-4 rounded-xl border-2 sm:border-3 border-black ${bgClass} shadow-[2.5px_2.5px_0px_0px_#000] sm:shadow-[4px_4px_0px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1.5px_1.5px_0px_0px_#000] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all duration-150 ease-out overflow-hidden`}
+      target={link.url.startsWith('http') ? '_blank' : undefined}
+      rel={link.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+      onClick={handleClick}
+      className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-2xl"
     >
-      {/* Safe Badge Position: Never overlaps or breaches boundaries */}
-      {link.badge && (
-        <span className="absolute -top-2 left-3 px-1.5 py-0.2 text-[8px] sm:text-[10px] font-black uppercase tracking-wider bg-black text-white rounded border border-black shadow-[1px_1px_0px_0px_#000] -rotate-2 group-hover:rotate-0 transition-transform select-none z-10">
-          ★ {link.badge}
-        </span>
-      )}
-
-      <div className="flex items-center gap-2 sm:gap-3 text-left min-w-0 pr-1.5 flex-1 overflow-hidden">
-        {/* Index Number Badge (Visible on tablet/desktop) */}
-        <span className="hidden sm:inline-flex items-center justify-center w-7 h-7 rounded-lg border-2 border-black bg-white/90 text-black text-[11px] font-black shadow-[1.5px_1.5px_0px_0px_#000] select-none flex-shrink-0">
-          {formattedIndex}
-        </span>
-
-        {/* Icon Container */}
-        {link.icon && (
-          <div className="flex-shrink-0 w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl border-2 border-black bg-white flex items-center justify-center text-lg sm:text-2xl shadow-[1.5px_1.5px_0px_0px_#000] sm:shadow-[2px_2px_0px_0px_#000] select-none group-hover:scale-105 transition-transform">
-            {link.icon}
-          </div>
+      <Card
+        className={cn(
+          'group relative flex w-full items-center justify-between gap-3.5 p-4 border border-border bg-card text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md active:scale-[0.98] active:bg-muted/40 cursor-pointer overflow-hidden',
+          className
         )}
+      >
+        {/* 좌측: 아이콘 컨테이너 */}
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-muted text-2xl transition-transform duration-200 group-hover:scale-105 group-hover:bg-blue-50 dark:group-hover:bg-blue-950 select-none">
+          {link.icon || '🔗'}
+        </div>
 
-        {/* Text Content */}
-        <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
-          <span className="font-black text-black text-[12px] sm:text-base tracking-tight truncate group-hover:underline leading-tight">
-            {link.title}
-          </span>
-          {link.description && (
-            <span className="text-[10px] sm:text-xs font-bold text-neutral-800 tracking-tight truncate mt-0.5 opacity-90 leading-tight">
-              {link.description}
+        {/* 중앙: 텍스트 정보 */}
+        <div className="flex min-w-0 flex-1 flex-col text-left">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-base font-bold text-foreground group-hover:text-blue-600 transition-colors">
+              {link.title}
             </span>
+            {link.badge && (
+              <Badge
+                variant={getBadgeVariant(link.badge)}
+                className="text-[10px] px-2 py-0.5 shrink-0"
+              >
+                {link.badge}
+              </Badge>
+            )}
+          </div>
+
+          {link.description && (
+            <p className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
+              {link.description}
+            </p>
+          )}
+
+          {/* 클릭수 및 지표 */}
+          {typeof link.clickCount === 'number' && (
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+              <Eye className="size-3 text-muted-foreground/80" />
+              <span>{link.clickCount.toLocaleString()}회 클릭</span>
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Action Arrow Icon Button */}
-      <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-lg border-2 border-black bg-white flex items-center justify-center font-black text-black shadow-[1.5px_1.5px_0px_0px_#000] sm:shadow-[2px_2px_0px_0px_#000] group-hover:bg-black group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all select-none text-[11px] sm:text-sm">
-        ↗
-      </div>
+        {/* 우측: 이동 화살표 아이콘 */}
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-all duration-200 group-hover:bg-blue-600 group-hover:text-white group-hover:translate-x-0.5">
+          <ExternalLink className="size-4" />
+        </div>
+      </Card>
     </a>
   );
 }

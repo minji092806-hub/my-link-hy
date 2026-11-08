@@ -54,8 +54,9 @@ flowchart LR
 | :--- | :--- | :--- |
 | **Frontend Framework** | **Next.js 15 (App Router)** | 서버 컴포넌트(RSC)를 활용한 빠른 초기 로딩 및 동적 라우팅(`/[username]`) 지원 |
 | **Language** | **TypeScript** | 안정적인 타입 안전성 및 개발 생산성 향상 |
-| **Styling** | **Tailwind CSS** | 빠르고 일관된 유틸리티 퍼스트 스타일링 및 디자인 토큰 연동 |
-| **Design System** | **TDS (Toss Design System) Guideline** | 심플하고 직관적인 한국형 미니멀 UI/UX 구현 (`design.md` 토큰 활용) |
+| **Styling** | **Tailwind CSS (100% 통일)** | 모든 페이지 및 컴포넌트의 스타일을 Tailwind CSS로 100% 일원화하여 일관된 유틸리티 퍼스트 스타일링 및 유지보수성 극대화 |
+| **Component Architecture** | **shadcn/ui (재사용 컴포넌트)** | Radix / Base UI 기반의 shadcn/ui (`Button`, `Card`, `Badge`, `Avatar` 등)를 구축하여 고품질의 재사용 가능한 컴포넌트 체계 확립 |
+| **Design System** | **TDS (Toss Design System) Guideline** | 심플하고 직관적인 한국형 미니멀 UI/UX 구현 (`design.md` 토큰 및 Tailwind 유틸리티 연동) |
 | **Auth** | **Firebase Authentication** | 구글 간편로그인, 카카오 소셜 로그인, 이메일/비밀번호 인증 원스톱 지원 |
 | **Database** | **Cloud Firestore** | NoSQL 실시간 문서형 데이터베이스로 빠른 CRUD 및 실시간 동기화 지원 |
 | **Storage** | **Firebase Storage** | 프로필 이미지(아바타) 업로드 및 CDN 서빙 |
@@ -363,7 +364,26 @@ flowchart TD
         └── updatedAt: Timestamp
 ```
 
+### 5.1 초기 개발 및 테스트용 기본 더미 데이터 명세 (Mock / Seed Data)
+프론트엔드 UI 프로토타이핑, 실시간 목업 프리뷰 검증 및 신규 회원 온보딩 시 기본 시드(Seed) 데이터로 사용되는 더미 링크 데이터셋입니다.
+
+- **데이터 소스 파일**: `src/data/links.ts` (타입 정의: `src/types/index.ts`의 `LinkItem`)
+- **적용 대상**: 대시보드 2열 프리뷰(`useEditorStore`), 공개 프로필 페이지(`/[username]`), 컴포넌트(`LinkCard`, `ListRow`)
+- **더미 데이터 항목 구성**:
+
+| ID | 제목 (Title) | 연결 URL | 설명 (Description) | 아이콘 | 순서 | 뱃지 | 테마 컬러 |
+| :--- | :--- | :--- | :--- | :---: | :---: | :---: | :---: |
+| `link-1` | 네이버 웹툰 공식 연재처 | `https://comic.naver.com/webtoon` | 매주 화·목 정기 연재 중! 최신화 바로 보러가기 | 📖 | 1 | `연재중` | `lime` |
+| `link-2` | 공식 인스타그램 | `https://instagram.com` | 작업 비하인드 컷, 러프 스케치 및 일상 공유 | 📸 | 2 | `DAILY` | `pink` |
+| `link-3` | 공식 굿즈 스마트스토어 | `https://smartstore.naver.com` | 아크릴 키링, 엽서팩, 스티커 등 공식 굿즈 판매 | 🛍️ | 3 | `NEW` | `yellow` |
+| `link-4` | 노션 온라인 포트폴리오 | `https://notion.site` | 외주 이력, 캐릭터 디자인 시트 및 브랜드 협업 아카이브 | 📂 | 4 | - | `cyan` |
+| `link-5` | 유튜브 채널 (드로잉 & 브이로그) | `https://youtube.com` | 웹툰 마감 타임랩스 및 작업실 일상 브이로그 | 🎬 | 5 | - | `white` |
+| `link-6` | 팬 커뮤니티 (오픈카톡/디스코드) | `https://open.kakao.com` | 독자님들과 소통하고 스포일러 없는 잡담을 나누는 공간 | 💬 | 6 | `팬전용` | `purple` |
+| `link-7` | 작가 응원 & 커피 한 잔 후원 | `https://toss.me` | 따뜻한 응원 메시지와 커피 한 잔 선물하기 ☕ | ☕ | 7 | - | `yellow` |
+| `link-8` | 비즈니스 & 외주 문의 | `mailto:contact@kkyareuk.com` | 출판, 일러스트 외주, 광고/콜라보 제휴 문의 메일 | 💌 | 8 | - | `white` |
+
 ---
+
 
 ## 6. 디자인 가이드라인 (TDS - Toss Design System 스타일)
 
@@ -377,6 +397,9 @@ flowchart TD
 - **타이포그래피**:
   - `Pretendard` 또는 `Geist Sans` 폰트 적용
   - 명확한 계층 구조: 제목 20~24px Bold, 본문 15~16px Medium, 캡션 12~13px Regular
+- **스타일링 및 컴포넌트 아키텍처 원칙**:
+  - **Tailwind CSS 100% 통일**: 전체 페이지와 컴포넌트는 인라인 스타일이나 별도 CSS 파일 대신 Tailwind CSS 유틸리티 클래스로 100% 통일하여 관리합니다. 디자인 토큰은 Tailwind CSS v4 테마 변수(`@theme`, CSS Variables)와 직결됩니다.
+  - **shadcn/ui 기반 재사용 컴포넌트**: 모든 공통 UI 요소는 `src/components/ui/` 디렉토리에 shadcn/ui 규격의 재사용 가능한 컴포넌트(`Button`, `Card`, `Badge`, `Avatar` 등)로 추상화하여 일관된 코드 품질과 높은 생산성을 유지합니다.
 - **컴포넌트 특징**:
   - 버튼/카드 둥근 모서리: `rounded-2xl` (16px) 또는 `rounded-3xl` (24px)
   - 클릭/터치 반응: 누를 때 살짝 축소되는 마이크로 인터랙션 (`active:scale-[0.98] transition-all`)
