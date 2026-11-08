@@ -18,6 +18,7 @@ import { EditProfileDialog } from '@/components/EditProfileDialog';
 import { useProfile } from '@/hooks/useProfile';
 import { cn } from '@/lib/utils';
 import { MyLinkIntro } from '@/components/MyLinkIntro';
+import { Header } from '@/components/Header';
 import {
   addLinkToFirestore,
   updateLinkInFirestore,
@@ -56,6 +57,7 @@ import {
   Info,
   Layers,
   Pencil,
+  Eye,
 } from 'lucide-react';
 
 type FilterCategory = 'all' | 'work' | 'sns' | 'shop' | 'contact';
@@ -67,11 +69,11 @@ interface TabConfig {
 }
 
 const CATEGORY_TABS: TabConfig[] = [
-  { id: 'all', label: '전체', icon: <Sparkles className="size-3.5" /> },
-  { id: 'work', label: '연재작·작품', icon: <BookOpen className="size-3.5" /> },
-  { id: 'sns', label: 'SNS·채널', icon: <Camera className="size-3.5" /> },
-  { id: 'shop', label: '굿즈·스토어', icon: <ShoppingBag className="size-3.5" /> },
-  { id: 'contact', label: '문의·후원', icon: <Mail className="size-3.5" /> },
+  { id: 'all', label: '전체', icon: <Sparkles className="size-3" /> },
+  { id: 'work', label: '작품', icon: <BookOpen className="size-3" /> },
+  { id: 'sns', label: 'SNS', icon: <Camera className="size-3" /> },
+  { id: 'shop', label: '스토어', icon: <ShoppingBag className="size-3.5" /> },
+  { id: 'contact', label: '문의', icon: <Mail className="size-3" /> },
 ];
 
 /**
@@ -120,6 +122,7 @@ export default function LinksPage() {
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
 
   // UI 상태
   const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all');
@@ -514,139 +517,61 @@ export default function LinksPage() {
         </div>
       )}
 
-      {/* ─── 상단 네비게이션 헤더 (GNB) ─── */}
-      <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur-md transition-all sm:px-6">
-        {/* 좌측: 서비스 로고 및 핸들 */}
-        <div className="flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-xl bg-blue-600 text-sm font-black text-white shadow-xs">
-            🔗
-          </span>
-          <div className="flex flex-col">
-            <span className="text-[15px] font-bold tracking-tight text-foreground leading-none">
-              마이링크
-            </span>
-            <span className="text-[10px] text-muted-foreground font-mono mt-0.5 hidden sm:inline">
-              {currentUser ? `users/${currentUser.uid.slice(0, 8)}...` : 'public view'}
-            </span>
-          </div>
+      {/* ─── 상단 네비게이션 헤더 (GNB, 프로필 드롭다운 & 개인별 페이지 이동 포함) ─── */}
+      <Header
+        currentUser={currentUser}
+        userProfile={activeUserProfile}
+        userDisplayName={userDisplayName}
+        isAuthLoading={isAuthLoading}
+        isLoggingIn={isLoggingIn}
+        isLoggingOut={isLoggingOut}
+        onLogin={handleGoogleLogin}
+        onLogout={handleLogout}
+        onOpenProfileDialog={() => setIsProfileDialogOpen(true)}
+        onOpenAddDialog={handleOpenAddDialog}
+        onRefresh={handleRefresh}
+        isSyncing={isSyncing}
+        isLoading={isLoading}
+        onShare={handleShare}
+        onOpenPreview={() => setIsPreviewMode((prev) => !prev)}
+        isPreviewMode={isPreviewMode}
+      />
 
-          {currentUser ? (
-            <Badge variant="blue" className="text-[11px] font-semibold px-2 py-0.5 ml-1 hidden xs:inline-flex">
-              {activeUserProfile?.handle || `@${userDisplayName}`}
-            </Badge>
-          ) : (
-            <Badge variant="secondary" className="text-[11px] font-medium px-2 py-0.5 ml-1 hidden xs:inline-flex">
-              둘러보기 모드
-            </Badge>
-          )}
-        </div>
 
-        {/* 우측: 구글 로그인 / 유저 이름 및 로그아웃 버튼 */}
-        <div className="flex items-center gap-2">
-          {isAuthLoading ? (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground px-2 py-1">
-              <Loader2 className="size-3.5 animate-spin text-blue-600" />
-              <span className="hidden sm:inline">인증 확인 중...</span>
-            </div>
-          ) : currentUser ? (
-            /* ── 요구사항 2: 로그인 상태 (사용자 이름 표시 + "로그아웃" 버튼) ── */
-            <div className="flex items-center gap-2">
-              <div
-                onClick={() => setIsProfileDialogOpen(true)}
-                title="프로필 수정하기"
-                className="flex items-center gap-2 rounded-full bg-muted/60 pl-1.5 pr-3 py-1 border border-border/60 hover:bg-muted/90 cursor-pointer transition-colors"
-              >
-                <Avatar className="size-6 rounded-full ring-1 ring-border">
-                  {activeUserProfile?.photoURL || currentUser.photoURL ? (
-                    <AvatarImage
-                      src={activeUserProfile?.photoURL || currentUser.photoURL || ''}
-                      alt={userDisplayName}
-                      className="object-cover"
-                    />
-                  ) : null}
-                  <AvatarFallback className="text-[11px] bg-blue-600 text-white font-bold">
-                    {userDisplayName[0]?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-xs font-bold text-foreground max-w-[90px] sm:max-w-[130px] truncate">
-                  {userDisplayName}
+      {/* ─── 모바일 최적화 메인 셸 (최대 480px 중앙 정렬, Mobile S/M 패딩 최적화) ─── */}
+      <main className="mx-auto max-w-[480px] px-3 pt-3.5 pb-16 sm:px-5 sm:pt-5 sm:pb-20">
+        {/* ─── 내 페이지 미리보기 모드 안내 배너 (기존 페이지 내 인라인 렌더링) ─── */}
+        {isPreviewMode && (
+          <div className="sticky top-16 sm:top-20 z-20 mb-4 sm:mb-5 flex items-center justify-between gap-2 sm:gap-3 rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-600 to-indigo-600 p-2.5 sm:p-3.5 text-white shadow-xl animate-in fade-in slide-in-from-top-3 backdrop-blur-md">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+              <span className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white">
+                <Eye className="size-3.5 sm:size-4" />
+              </span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] sm:text-xs font-bold leading-tight truncate">
+                  내 페이지 미리보기 중
+                </span>
+                <span className="text-[9px] sm:text-[10px] text-blue-100 truncate mt-0.5">
+                  방문자에게 실제로 보이는 화면이에요
                 </span>
               </div>
-
-              {/* 로그아웃 버튼 */}
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
               <Button
-                variant="outline"
+                type="button"
+                variant="secondary"
                 size="sm"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="h-8 rounded-full text-xs font-semibold gap-1 text-muted-foreground hover:text-red-600 hover:border-red-200 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer"
+                onClick={() => setIsPreviewMode(false)}
+                className="h-6.5 sm:h-7 rounded-full text-[11px] sm:text-xs font-bold bg-white text-blue-700 hover:bg-neutral-100 shadow-xs cursor-pointer px-2.5 sm:px-3"
               >
-                {isLoggingOut ? (
-                  <Loader2 className="size-3 animate-spin" />
-                ) : (
-                  <LogOut className="size-3" />
-                )}
-                <span>로그아웃</span>
+                편집 모드로 복귀
               </Button>
             </div>
-          ) : (
-            /* ── 요구사항 1: 로그아웃 상태 ("Google로 로그인" 버튼, 클릭 시 구글 팝업) ── */
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleGoogleLogin}
-              disabled={isLoggingIn}
-              className="h-9 rounded-full text-xs font-bold gap-2 border-border bg-white hover:bg-neutral-50 text-neutral-800 shadow-xs dark:bg-neutral-900 dark:hover:bg-neutral-800 dark:text-neutral-100 cursor-pointer px-3.5"
-            >
-              {isLoggingIn ? (
-                <Loader2 className="size-3.5 animate-spin text-blue-600" />
-              ) : (
-                <GoogleIcon className="size-4" />
-              )}
-              <span>Google로 로그인</span>
-            </Button>
-          )}
+          </div>
+        )}
 
-          {/* 새로고침 버튼 */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isSyncing || isLoading}
-            title="목록 새로고침"
-            className="size-8 rounded-full p-0 text-muted-foreground hover:text-foreground cursor-pointer"
-          >
-            <RefreshCw className={cn('size-3.5', isSyncing && 'animate-spin text-blue-600')} />
-          </Button>
-
-          {/* 새 링크 추가 버튼 (수정 권한: 로그인필수) */}
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleOpenAddDialog}
-            className="rounded-full gap-1 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs h-8 px-3 cursor-pointer"
-          >
-            <Plus className="size-3.5" />
-            <span className="hidden sm:inline">새 링크</span>
-          </Button>
-
-          {/* 공유 버튼 */}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleShare}
-            className="rounded-full gap-1.5 text-xs font-semibold h-8 px-2.5 sm:px-3 cursor-pointer"
-          >
-            <Share2 className="size-3.5" />
-            <span className="hidden sm:inline">공유</span>
-          </Button>
-        </div>
-      </header>
-
-      {/* ─── 모바일 최적화 메인 셸 (최대 480px 중앙 정렬) ─── */}
-      <main className="mx-auto max-w-[480px] px-4 pt-5 pb-20 sm:px-5">
         {/* ─── 요구사항: 만약 로그인을 안 했다면 로그인 이후에 사용할 수 있도록 설명 문구 표시 ─── */}
-        {!currentUser && !isAuthLoading && (
+        {!isPreviewMode && !currentUser && !isAuthLoading && (
           <Card className="mb-5 border-blue-200 bg-gradient-to-br from-blue-50/80 via-white to-sky-50/50 p-4 shadow-xs dark:border-blue-900/50 dark:from-blue-950/30 dark:via-neutral-900 dark:to-blue-950/20">
             <div className="flex items-start gap-3">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
@@ -701,11 +626,11 @@ export default function LinksPage() {
         {/* ─── 프로필 섹션 (해당 경로의 유저 정보 화면 표시) ─── */}
         <section className="flex flex-col items-center text-center">
           {/* 아바타 */}
-          <div className="relative mb-3.5 inline-block group">
+          <div className="relative mb-3 inline-block group">
             <Avatar
               onClick={() => (currentUser ? setIsProfileDialogOpen(true) : handleAuthRequired())}
               className={cn(
-                'size-20 rounded-3xl ring-4 ring-background shadow-md transition-all',
+                'size-16 sm:size-20 rounded-2xl sm:rounded-3xl ring-4 ring-background shadow-md transition-all',
                 currentUser && 'cursor-pointer hover:ring-blue-300 dark:hover:ring-blue-700 hover:scale-105'
               )}
               title={currentUser ? '클릭하여 프로필 수정' : undefined}
@@ -716,59 +641,59 @@ export default function LinksPage() {
                   alt={userDisplayName}
                 />
               ) : null}
-              <AvatarFallback className="rounded-3xl bg-gradient-to-br from-blue-600 via-blue-500 to-sky-400 text-3xl text-white font-bold">
+              <AvatarFallback className="rounded-2xl sm:rounded-3xl bg-gradient-to-br from-blue-600 via-blue-500 to-sky-400 text-2xl sm:text-3xl text-white font-bold">
                 {currentUser ? userDisplayName[0]?.toUpperCase() : '🎨'}
               </AvatarFallback>
             </Avatar>
             {/* 공식 인증 또는 수정 뱃지 */}
-            {currentUser ? (
+            {currentUser && !isPreviewMode ? (
               <button
                 type="button"
                 onClick={() => setIsProfileDialogOpen(true)}
                 title="프로필 수정하기"
-                className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs ring-2 ring-background hover:bg-blue-700 cursor-pointer transition-transform hover:scale-110"
+                className="absolute -bottom-1 -right-1 flex size-5.5 sm:size-6 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs ring-2 ring-background hover:bg-blue-700 cursor-pointer transition-transform hover:scale-110"
               >
-                <Pencil className="size-3 stroke-[2.5]" />
+                <Pencil className="size-2.5 sm:size-3 stroke-[2.5]" />
               </button>
             ) : (
               <div
-                className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs ring-2 ring-background"
-                title="공식 데모 계정"
+                className="absolute -bottom-1 -right-1 flex size-5.5 sm:size-6 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs ring-2 ring-background"
+                title={currentUser ? '인증된 프로필' : '공식 데모 계정'}
               >
-                <Check className="size-3.5 stroke-[3]" />
+                <Check className="size-3 sm:size-3.5 stroke-[3]" />
               </div>
             )}
           </div>
 
           {/* 작가/사용자 이름 및 핸들 (users/{user.uid} 정보 표시) */}
-          <div className="flex items-center gap-1.5">
-            <h1 className="text-[22px] font-extrabold tracking-tight text-foreground">
+          <div className="flex items-center gap-1.5 flex-wrap justify-center">
+            <h1 className="text-xl sm:text-[22px] font-extrabold tracking-tight text-foreground truncate max-w-[220px] sm:max-w-xs">
               {currentUser ? userDisplayName : '김민지'}
             </h1>
-            <span className="text-[14px] font-semibold text-muted-foreground">
+            <span className="text-xs sm:text-[14px] font-semibold text-muted-foreground">
               {currentUser ? '(내 링크)' : '(꺄륵)'}
             </span>
-            {currentUser && (
+            {!isPreviewMode && currentUser && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsProfileDialogOpen(true)}
                 title="프로필 수정"
-                className="size-7 rounded-full text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 cursor-pointer"
+                className="size-6 sm:size-7 rounded-full text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 cursor-pointer"
               >
-                <Pencil className="size-3.5" />
+                <Pencil className="size-3 sm:size-3.5" />
               </Button>
             )}
           </div>
 
-          <p className="mt-1 text-xs font-medium text-muted-foreground font-mono">
+          <p className="mt-0.5 sm:mt-1 text-[11px] sm:text-xs font-medium text-muted-foreground font-mono">
             {currentUser
               ? (activeUserProfile?.handle || `@${userDisplayName}`)
               : '@minji_art'}
           </p>
 
           {/* 소개글 */}
-          <p className="mt-2.5 max-w-xs text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-2 max-w-[280px] sm:max-w-xs text-xs sm:text-sm leading-relaxed text-muted-foreground px-1">
             {currentUser ? (
               activeUserProfile?.bio || `${userDisplayName}님의 개인 마이링크 페이지예요.`
             ) : (
@@ -780,96 +705,78 @@ export default function LinksPage() {
           </p>
 
           {/* Firestore 경로 상세 정보 칩 (해당 경로의 유저 정보 표시) */}
-          {currentUser && (
-            <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-muted/80 px-3 py-1 text-[11px] font-medium text-muted-foreground border border-border/80">
-              <Layers className="size-3 text-blue-600" />
+          {!isPreviewMode && currentUser && (
+            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-muted/80 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-medium text-muted-foreground border border-border/80">
+              <Layers className="size-2.5 sm:size-3 text-blue-600" />
               <span>경로: users/{currentUser.uid}/links</span>
             </div>
           )}
 
-          {/* 빠른 액션 칩스 */}
-          <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2">
-            {currentUser && (
+          {/* 프로필 액션 버튼 (프로필 수정 & 공유하기) */}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+            {!isPreviewMode && currentUser && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setIsProfileDialogOpen(true)}
-                className="rounded-full text-xs font-bold gap-1.5 h-8 px-3.5 border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-300 cursor-pointer shadow-xs"
+                className="rounded-full text-xs font-bold gap-1.5 h-7.5 sm:h-8 px-3.5 sm:px-4 border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-300 cursor-pointer shadow-xs"
               >
-                <Pencil className="size-3.5 text-blue-600 dark:text-blue-400" />
+                <Pencil className="size-3 sm:size-3.5 text-blue-600 dark:text-blue-400" />
                 <span>프로필 수정</span>
               </Button>
             )}
             <Button
-              variant={isCopied ? 'default' : 'secondary'}
+              variant="outline"
               size="sm"
-              onClick={handleCopyProfileLink}
-              className="rounded-full text-xs font-bold gap-1.5 h-8 px-3.5 cursor-pointer"
+              onClick={handleShare}
+              className="rounded-full text-xs font-bold gap-1.5 h-7.5 sm:h-8 px-3.5 sm:px-4 border-border bg-card hover:bg-muted text-foreground cursor-pointer shadow-xs"
             >
-              {isCopied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-              <span>{isCopied ? '복사됨!' : '링크 복사'}</span>
+              <Share2 className="size-3 sm:size-3.5 text-blue-600 dark:text-blue-400" />
+              <span>공유하기</span>
             </Button>
-            <a
-              href="https://instagram.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cn(
-                buttonVariants({ variant: 'outline', size: 'sm' }),
-                'rounded-full text-xs font-semibold gap-1.5 h-8 px-3 cursor-pointer'
-              )}
-            >
-              <Camera className="size-3.5 text-pink-500" />
-              <span>인스타그램</span>
-            </a>
-            <a
-              href={currentUser?.email ? `mailto:${currentUser.email}` : 'mailto:contact@kkyareuk.com'}
-              className={cn(
-                buttonVariants({ variant: 'outline', size: 'sm' }),
-                'rounded-full text-xs font-semibold gap-1.5 h-8 px-3 cursor-pointer'
-              )}
-            >
-              <Mail className="size-3.5 text-blue-500" />
-              <span>이메일 문의</span>
-            </a>
           </div>
 
           {/* ─── 통계 요약 카드 ─── */}
-          <Card className="mt-5 grid w-full grid-cols-2 gap-2.5 p-3.5 shadow-xs border-border bg-card">
-            <div className="flex flex-col items-center justify-center rounded-xl bg-muted/50 py-2.5">
-              <span className="text-[11px] font-semibold text-muted-foreground">
+          <Card className="mt-4 sm:mt-5 grid w-full grid-cols-2 gap-2 sm:gap-2.5 p-2.5 sm:p-3.5 shadow-xs border-border bg-card">
+            <div className="flex flex-col items-center justify-center rounded-xl bg-muted/50 py-2 sm:py-2.5">
+              <span className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground">
                 총 방문자 수
               </span>
-              <span className="mt-0.5 text-lg font-black tracking-tight text-foreground">
+              <span className="mt-0.5 text-base sm:text-lg font-black tracking-tight text-foreground">
                 {currentUser ? '1' : totalViews.toLocaleString()}
               </span>
             </div>
-            <div className="flex flex-col items-center justify-center rounded-xl bg-muted/50 py-2.5">
-              <span className="text-[11px] font-semibold text-muted-foreground">
+            <div className="flex flex-col items-center justify-center rounded-xl bg-muted/50 py-2 sm:py-2.5">
+              <span className="text-[10px] sm:text-[11px] font-semibold text-muted-foreground">
                 총 링크 클릭 수
               </span>
-              <span className="mt-0.5 text-lg font-black tracking-tight text-blue-600">
+              <span className="mt-0.5 text-base sm:text-lg font-black tracking-tight text-blue-600">
                 {totalClicks.toLocaleString()}
               </span>
             </div>
           </Card>
         </section>
 
-        {/* ─── 카테고리 필터 탭 ─── */}
-        <section className="mt-6">
-          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+        {/* ─── 카테고리 필터 탭 (스크롤 없이 한눈에 볼 수 있는 5분할 세그먼트) ─── */}
+        <section className="mt-4 sm:mt-5">
+          <div className="grid grid-cols-5 gap-0.5 sm:gap-1 w-full rounded-2xl bg-muted/70 p-1 border border-border/60">
             {CATEGORY_TABS.map((tab) => {
               const isSelected = selectedCategory === tab.id;
               return (
-                <Button
+                <button
                   key={tab.id}
-                  variant={isSelected ? 'default' : 'outline'}
-                  size="sm"
+                  type="button"
                   onClick={() => setSelectedCategory(tab.id)}
-                  className="rounded-full text-xs font-semibold gap-1.5 h-8 px-3 shrink-0 cursor-pointer"
+                  className={cn(
+                    'flex flex-col xs:flex-row items-center justify-center gap-0.5 xs:gap-1 py-1.5 xs:py-2 px-0.5 xs:px-1 rounded-xl transition-all cursor-pointer',
+                    isSelected
+                      ? 'bg-blue-600 text-white shadow-xs font-black'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-background/60'
+                  )}
                 >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                </Button>
+                  <span className="shrink-0 text-xs sm:text-sm">{tab.icon}</span>
+                  <span className="text-[10px] xs:text-[11px] sm:text-xs truncate leading-tight">{tab.label}</span>
+                </button>
               );
             })}
           </div>
@@ -890,16 +797,18 @@ export default function LinksPage() {
               )}
             </div>
 
-            {/* 권한: 수정=로그인필수 */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleOpenAddDialog}
-              className="rounded-full text-xs font-bold gap-1 text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-950 h-7 px-2.5 cursor-pointer"
-            >
-              <Plus className="size-3" />
-              <span>새 링크 추가</span>
-            </Button>
+            {/* 권한: 수정=로그인필수 (미리보기 모드일 땐 숨김) */}
+            {!isPreviewMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenAddDialog}
+                className="rounded-full text-xs font-bold gap-1 text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-950 h-7 px-2.5 cursor-pointer"
+              >
+                <Plus className="size-3" />
+                <span>새 링크 추가</span>
+              </Button>
+            )}
           </div>
 
           {/* 링크 카드 리스트 */}
@@ -938,15 +847,17 @@ export default function LinksPage() {
                     전체 링크 보기
                   </Button>
                 )}
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handleOpenAddDialog}
-                  className="rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-1 cursor-pointer"
-                >
-                  <Plus className="size-3.5" />
-                  새 링크 추가
-                </Button>
+                {!isPreviewMode && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleOpenAddDialog}
+                    className="rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-1 cursor-pointer"
+                  >
+                    <Plus className="size-3.5" />
+                    새 링크 추가
+                  </Button>
+                )}
               </div>
             </Card>
           ) : (
@@ -960,7 +871,7 @@ export default function LinksPage() {
                 onDeleteRequest={handleDeleteRequest}
                 isDeleting={deletingId === link.id}
                 isEditing={editTarget?.id === link.id}
-                canEdit={!!currentUser}
+                canEdit={!isPreviewMode && !!currentUser}
                 onAuthRequired={handleAuthRequired}
               />
             ))

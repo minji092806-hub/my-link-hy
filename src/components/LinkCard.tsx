@@ -207,13 +207,13 @@ export function LinkCard({
     return (
       <Card
         className={cn(
-          'w-full p-4 border-2 border-blue-500 bg-card text-card-foreground shadow-md rounded-2xl transition-all duration-200',
+          'w-full p-3 sm:p-4 border-2 border-blue-500 bg-card text-card-foreground shadow-md rounded-xl sm:rounded-2xl transition-all duration-200',
           className
         )}
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2.5 sm:gap-3">
           {/* 아이콘 */}
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-2xl select-none dark:bg-blue-950 mt-1">
+          <div className="flex size-9 sm:size-11 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-blue-50 text-xl sm:text-2xl select-none dark:bg-blue-950 mt-0.5">
             {link.icon || '🔗'}
           </div>
 
@@ -331,26 +331,26 @@ export function LinkCard({
     <Card
       onClick={handleOpenLink}
       className={cn(
-        'group relative flex w-full items-center justify-between gap-3.5 p-4 border border-border bg-card text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md active:scale-[0.99] cursor-pointer overflow-hidden rounded-2xl',
+        'group relative flex w-full items-center justify-between gap-2 xs:gap-2.5 sm:gap-3.5 p-2.5 xs:p-3 sm:p-4 border border-border bg-card text-card-foreground shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-md active:scale-[0.99] cursor-pointer overflow-hidden rounded-xl sm:rounded-2xl',
         isDeleting && 'opacity-60 pointer-events-none bg-muted/30',
         className
       )}
     >
       {/* 좌측: 아이콘 컨테이너 */}
-      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-muted text-2xl transition-transform duration-200 group-hover:scale-105 group-hover:bg-blue-50 dark:group-hover:bg-blue-950 select-none">
+      <div className="flex size-9 xs:size-10 sm:size-12 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-muted text-xl sm:text-2xl transition-transform duration-200 group-hover:scale-105 group-hover:bg-blue-50 dark:group-hover:bg-blue-950 select-none">
         {link.icon || '🔗'}
       </div>
 
       {/* 중앙: 텍스트 정보 */}
       <div className="flex min-w-0 flex-1 flex-col text-left">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-base font-bold text-foreground group-hover:text-blue-600 transition-colors">
+        <div className="flex items-center gap-1.5 xs:gap-2">
+          <span className="truncate text-xs xs:text-sm sm:text-base font-bold text-foreground group-hover:text-blue-600 transition-colors">
             {link.title}
           </span>
           {link.badge && (
             <Badge
               variant={getBadgeVariant(link.badge)}
-              className="text-[10px] px-2 py-0.5 shrink-0"
+              className="text-[9px] xs:text-[10px] px-1.5 py-0.2 shrink-0"
             >
               {link.badge}
             </Badge>
@@ -358,30 +358,30 @@ export function LinkCard({
         </div>
 
         {link.description ? (
-          <p className="mt-0.5 truncate text-xs font-medium text-muted-foreground">
+          <p className="mt-0.5 truncate text-[11px] sm:text-xs font-medium text-muted-foreground">
             {link.description}
           </p>
         ) : (
-          <p className="mt-0.5 truncate text-xs font-medium text-muted-foreground/80 font-mono">
+          <p className="mt-0.5 truncate text-[11px] sm:text-xs font-medium text-muted-foreground/80 font-mono">
             {link.url}
           </p>
         )}
 
         {/* 조회수(아이콘과 숫자만 표시) 및 수정 시각 지표 */}
-        <div className="mt-1.5 flex items-center gap-2 text-[11px] font-medium text-muted-foreground flex-wrap">
+        <div className="mt-1 xs:mt-1.5 flex items-center gap-1.5 xs:gap-2 text-[10px] sm:text-[11px] font-medium text-muted-foreground flex-wrap">
           <span
             title={`조회수: ${(link.clickCount ?? 0).toLocaleString()}회`}
-            className="inline-flex items-center gap-1 rounded-md bg-blue-50/80 px-2 py-0.5 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-semibold border border-blue-100 dark:border-blue-900/50"
+            className="inline-flex items-center gap-1 rounded-md bg-blue-50/80 px-1.5 py-0.2 sm:px-2 sm:py-0.5 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-semibold border border-blue-100 dark:border-blue-900/50"
           >
-            <Eye className="size-3 text-blue-600 dark:text-blue-400" />
+            <Eye className="size-2.5 sm:size-3 text-blue-600 dark:text-blue-400" />
             <span>{(link.clickCount ?? 0).toLocaleString()}</span>
           </span>
           {formatUpdatedAt(link.updated_at) && (
             <div
-              className="flex items-center gap-1 text-[10px] text-muted-foreground/80"
+              className="flex items-center gap-1 text-[9px] sm:text-[10px] text-muted-foreground/80 hidden xs:flex"
               title={`마지막 수정: ${formatUpdatedAt(link.updated_at)}`}
             >
-              <Clock className="size-3 text-muted-foreground/70" />
+              <Clock className="size-2.5 sm:size-3 text-muted-foreground/70" />
               <span>수정 {formatUpdatedAt(link.updated_at)}</span>
             </div>
           )}
@@ -390,7 +390,7 @@ export function LinkCard({
 
       {/* 우측 액션: 수정 버튼 + 삭제 버튼 + 외부 이동 버튼 (항상 표시) */}
       <div
-        className="flex items-center gap-1 shrink-0"
+        className="flex items-center gap-0.5 xs:gap-1 shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 수정 버튼 (연필 아이콘 - 항상 표시) */}
@@ -401,11 +401,11 @@ export function LinkCard({
             title={canEdit ? "링크 수정" : "수정하려면 로그인이 필요해요"}
             aria-label="링크 수정"
             className={cn(
-              "flex size-8 items-center justify-center rounded-lg text-neutral-600 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-colors cursor-pointer dark:text-neutral-400 dark:hover:bg-blue-950/60 dark:hover:text-blue-400 border border-transparent hover:border-blue-200 dark:hover:border-blue-900",
+              "flex size-7 xs:size-7.5 sm:size-8 items-center justify-center rounded-lg text-neutral-600 hover:text-blue-600 hover:bg-blue-50 active:scale-95 transition-colors cursor-pointer dark:text-neutral-400 dark:hover:bg-blue-950/60 dark:hover:text-blue-400 border border-transparent hover:border-blue-200 dark:hover:border-blue-900",
               !canEdit && "opacity-70 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/60"
             )}
           >
-            <Pencil className="size-3.5" />
+            <Pencil className="size-3 sm:size-3.5" />
           </button>
         )}
 
@@ -418,14 +418,14 @@ export function LinkCard({
             title={canEdit ? "링크 삭제" : "삭제하려면 로그인이 필요해요"}
             aria-label="링크 삭제"
             className={cn(
-              "flex size-8 items-center justify-center rounded-lg text-neutral-600 hover:text-red-600 hover:bg-red-50 active:scale-95 transition-colors cursor-pointer dark:text-neutral-400 dark:hover:bg-red-950/60 dark:hover:text-red-400 border border-transparent hover:border-red-200 dark:hover:border-red-900 disabled:pointer-events-none",
+              "flex size-7 xs:size-7.5 sm:size-8 items-center justify-center rounded-lg text-neutral-600 hover:text-red-600 hover:bg-red-50 active:scale-95 transition-colors cursor-pointer dark:text-neutral-400 dark:hover:bg-red-950/60 dark:hover:text-red-400 border border-transparent hover:border-red-200 dark:hover:border-red-900 disabled:pointer-events-none",
               !canEdit && "opacity-70 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/60"
             )}
           >
             {isDeleting ? (
-              <Loader2 className="size-3.5 animate-spin text-red-500" />
+              <Loader2 className="size-3 sm:size-3.5 animate-spin text-red-500" />
             ) : (
-              <Trash2 className="size-3.5" />
+              <Trash2 className="size-3 sm:size-3.5" />
             )}
           </button>
         )}
@@ -446,11 +446,11 @@ export function LinkCard({
           title="새 탭으로 열기"
           aria-label="새 탭으로 열기"
           className={cn(
-            "flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-all duration-200 group-hover:bg-blue-600 group-hover:text-white group-hover:translate-x-0.5 cursor-pointer ml-0.5",
+            "flex size-7 xs:size-7.5 sm:size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-all duration-200 group-hover:bg-blue-600 group-hover:text-white group-hover:translate-x-0.5 cursor-pointer ml-0.5",
             isEditing && "pointer-events-none opacity-50"
           )}
         >
-          <ExternalLink className="size-3.5" />
+          <ExternalLink className="size-3 sm:size-3.5" />
         </a>
       </div>
     </Card>

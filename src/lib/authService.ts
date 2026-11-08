@@ -134,6 +134,59 @@ export async function getUserProfile(uid: string): Promise<UserData | null> {
 }
 
 /**
+ * displayName으로 유저 검색
+ * - Firestore users 컬렉션에서 displayName 일치 여부 확인
+ * - 없으면 handle 일치 여부도 확인 (@ 포함/미포함 유연하게 대응)
+ * - 일치하는 유저가 없으면 null 반환
+ */
+export async function getUserByDisplayName(rawDisplayName: string): Promise<UserData | null> {
+  if (!rawDisplayName) return null;
+  const decoded = decodeURIComponent(rawDisplayName).trim();
+  if (!decoded) return null;
+
+  try {
+    const usersRef = collection(db, "users");
+
+    // 1. displayName 정확 일치 쿼리
+    const qName = query(usersRef, where("displayName", "==", decoded));
+    const snapName = await getDocs(qName);
+    if (!snapName.empty) {
+      const docSnap = snapName.docs[0];
+      return { ...docSnap.data(), uid: docSnap.id } as UserData;
+    }
+
+    // 2. handle 일치 여부 검색 (@ 접두사 보정)
+    const handleWithoutAt = decoded.startsWith("@") ? decoded.slice(1) : decoded;
+    const handleWithAt = `@${handleWithoutAt}`;
+
+    const qHandle1 = query(usersRef, where("handle", "==", handleWithAt));
+    const snapHandle1 = await getDocs(qHandle1);
+    if (!snapHandle1.empty) {
+      const docSnap = snapHandle1.docs[0];
+      return { ...docSnap.data(), uid: docSnap.id } as UserData;
+    }
+
+    const qHandle2 = query(usersRef, where("handle", "==", handleWithoutAt));
+    const snapHandle2 = await getDocs(qHandle2);
+    if (!snapHandle2.empty) {
+      const docSnap = snapHandle2.docs[0];
+      return { ...docSnap.data(), uid: docSnap.id } as UserData;
+    }
+
+    // 3. uid 자체로 접근한 경우도 지원
+    const directDocRef = doc(db, "users", decoded);
+    const directSnap = await getDoc(directDocRef);
+    if (directSnap.exists()) {
+      return { ...directSnap.data(), uid: directSnap.id } as UserData;
+    }
+  } catch (error) {
+    console.error("[Firestore] displayName으로 유저 검색 에러:", error);
+  }
+
+  return null;
+}
+
+/**
  * Display Name(닉네임) 중복 확인
  * - 빈값 또는 2자 미만 / 20자 초과 등 검증
  * - Firestore users 컬렉션에서 동일한 displayName이 존재하는지 쿼리

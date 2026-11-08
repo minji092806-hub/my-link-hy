@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 
@@ -63,7 +63,7 @@ export function ProfileHeader({ onCopyLink }: ProfileHeaderProps) {
           className="inline-flex h-[34px] items-center gap-1.5 rounded-full bg-[#E8F3FF] px-3.5 text-xs font-semibold text-[#3182F6] transition-all hover:bg-[#D9EAFE] active:scale-95"
         >
           <span>🔗</span>
-          <span>프로필 링크 복사</span>
+          <span>공유하기</span>
         </button>
       </div>
     </section>
