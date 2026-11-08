@@ -10,6 +10,7 @@ export interface LinkItem {
   badge?: string;
   clickCount?: number;
   category?: "work" | "sns" | "shop" | "contact";
+  createdAt?: unknown;
 }
 
 export interface UserProfile {

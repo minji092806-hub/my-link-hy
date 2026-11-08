@@ -11,11 +11,14 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Toast } from '@/components/toss/Toast';
 import { AddLinkDialog } from '@/components/AddLinkDialog';
+import { DeleteLinkDialog } from '@/components/DeleteLinkDialog';
 import { cn } from '@/lib/utils';
 import {
   addLinkToFirestore,
-  subscribeToLinks,
+  updateLinkInFirestore,
   incrementClickCountInFirestore,
+  deleteLinkFromFirestore,
+  getLinksFromFirestore,
 } from '@/lib/linkService';
 import {
   Share2,
@@ -28,6 +31,8 @@ import {
   Mail,
   Zap,
   Plus,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 
 type FilterCategory = 'all' | 'work' | 'sns' | 'shop' | 'contact';
@@ -47,7 +52,12 @@ const CATEGORY_TABS: TabConfig[] = [
 ];
 
 export default function LinksPage() {
-  const [links, setLinks] = useState<LinkItem[]>(DUMMY_LINKS);
+  const [links, setLinks] = useState<LinkItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<LinkItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all');
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
@@ -55,20 +65,32 @@ export default function LinksPage() {
   const [totalViews] = useState(3842);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  // Firestore 실시간 구독 (경로: users/anonymous/links)
+  // Firestore 1회 조회 (실시간 리스너 미사용)
   useEffect(() => {
-    const unsubscribe = subscribeToLinks(
-      (firestoreLinks) => {
-        if (firestoreLinks.length > 0) {
-          setLinks(firestoreLinks);
+    let isMounted = true;
+    const fetchLinks = async () => {
+      setIsLoading(true);
+      try {
+        const firestoreLinks = await getLinksFromFirestore();
+        if (isMounted) {
+          setLinks(firestoreLinks.length > 0 ? firestoreLinks : DUMMY_LINKS);
         }
-      },
-      (error) => {
-        console.warn('Firestore links 구독 실패, 기본 데이터를 유지합니다:', error);
+      } catch (error) {
+        console.warn('Firestore links 로드 실패, 기본 더미 데이터를 표시합니다:', error);
+        if (isMounted) {
+          setLinks(DUMMY_LINKS);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-    );
+    };
 
-    return () => unsubscribe();
+    fetchLinks();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // 토스트 메시지 헬퍼
@@ -80,9 +102,26 @@ export default function LinksPage() {
     }, 2200);
   }, []);
 
-  // 링크 추가 핸들러 (Firestore 'users/anonymous/links' 에 저장)
+  // 수동 새로고침 핸들러
+  const handleRefresh = useCallback(async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    try {
+      const refreshedLinks = await getLinksFromFirestore();
+      setLinks(refreshedLinks);
+      showToast('최신 링크 목록으로 갱신되었어요 🔄');
+    } catch (error) {
+      console.error('링크 갱신 실패:', error);
+      showToast('목록 갱신에 실패했어요.');
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isSyncing, showToast]);
+
+  // 링크 추가 핸들러 (Firestore 'users/anonymous/links' 에 저장 및 최신순 갱신)
   const handleAddLink = useCallback(
     async (newLinkData: Omit<LinkItem, 'id' | 'order' | 'clickCount'>) => {
+      setIsSyncing(true);
       try {
         const savedLink = await addLinkToFirestore({
           ...newLinkData,
@@ -91,24 +130,81 @@ export default function LinksPage() {
           isActive: true,
         });
 
-        // 실시간 구독 외에도 즉각적인 낙관적 UI 반영
+        // 실시간 구독(onSnapshot)으로도 갱신되지만,
+        // 사용자에게 즉각적인 체감 반응성을 제공하기 위해 최신순(맨 앞)에 낙관적 반영
         setLinks((prev) => {
           const withoutDup = prev.filter((item) => item.id !== savedLink.id);
-          return [savedLink, ...withoutDup.map((item, idx) => ({ ...item, order: idx + 2 }))];
+          return [savedLink, ...withoutDup];
         });
 
         if (newLinkData.category && selectedCategory !== 'all' && selectedCategory !== newLinkData.category) {
           setSelectedCategory(newLinkData.category);
         }
 
-        showToast(`'${newLinkData.title}' 링크가 Firestore에 안전하게 저장되었어요! ✨`);
+        showToast(`'${newLinkData.title}' 링크가 추가되었어요! ✨`);
       } catch (error) {
         console.error('Firestore 저장 중 에러 발생:', error);
         showToast('링크 저장에 실패했어요. 다시 시도해주세요.');
         throw error;
+      } finally {
+        setIsSyncing(false);
       }
     },
     [selectedCategory, showToast]
+  );
+
+  // 링크 수정 핸들러 (Firestore 'users/anonymous/links/{id}' updateDoc 및 UI 즉시 반영)
+  const handleUpdateLink = useCallback(
+    async (linkId: string, updates: { title: string; url: string }) => {
+      setIsSyncing(true);
+      try {
+        // UI 즉각적인 낙관적 반영
+        setLinks((prev) =>
+          prev.map((item) =>
+            item.id === linkId
+              ? { ...item, title: updates.title, url: updates.url }
+              : item
+          )
+        );
+        await updateLinkInFirestore(linkId, updates);
+        showToast(`'${updates.title}' 링크가 수정되었어요! ✨`);
+      } catch (error) {
+        console.error('Firestore 링크 수정 에러:', error);
+        showToast('링크 수정에 실패했어요.');
+        throw error;
+      } finally {
+        setIsSyncing(false);
+      }
+    },
+    [showToast]
+  );
+
+  // 링크 삭제 요청 핸들러 (확인 모달 표시)
+  const handleDeleteRequest = useCallback((link: LinkItem) => {
+    setDeleteTarget(link);
+  }, []);
+
+  // 링크 삭제 최종 확인 핸들러 (Firestore 'users/anonymous/links/{id}' deleteDoc)
+  const handleConfirmDelete = useCallback(
+    async (linkId: string) => {
+      setDeletingId(linkId);
+      setIsDeleting(true);
+      setIsSyncing(true);
+      try {
+        setLinks((prev) => prev.filter((item) => item.id !== linkId));
+        await deleteLinkFromFirestore(linkId);
+        showToast('링크가 삭제되었어요 🗑️');
+        setDeleteTarget(null);
+      } catch (error) {
+        console.error('Firestore 삭제 에러:', error);
+        showToast('링크 삭제에 실패했어요.');
+      } finally {
+        setDeletingId(null);
+        setIsDeleting(false);
+        setIsSyncing(false);
+      }
+    },
+    [showToast]
   );
 
   // 총 링크 클릭수 합계
@@ -166,7 +262,14 @@ export default function LinksPage() {
   }, [showToast]);
 
   return (
-    <div className="min-h-screen bg-muted/30 text-foreground antialiased">
+    <div className="min-h-screen bg-muted/30 text-foreground antialiased relative">
+      {/* ─── 최상단 실시간 동기화/갱신 진행 표시 바 (TDS 슬림 바) ─── */}
+      {isSyncing && (
+        <div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-blue-100 dark:bg-blue-950 overflow-hidden">
+          <div className="h-full w-full bg-gradient-to-r from-blue-500 via-sky-400 to-blue-600 animate-[progress-slide_1.2s_ease-in-out_infinite]" />
+        </div>
+      )}
+
       {/* ─── 상단 네비게이션 헤더 (TDS 모던 바) ─── */}
       <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur-md transition-all sm:px-6">
         <div className="flex items-center gap-2">
@@ -181,7 +284,19 @@ export default function LinksPage() {
           </Badge>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* 새로고침 버튼 */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isSyncing || isLoading}
+            title="목록 새로고침"
+            className="size-8 rounded-full p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+          >
+            <RefreshCw className={cn('size-3.5', isSyncing && 'animate-spin text-blue-600')} />
+          </Button>
+
           {/* 새 링크 추가 버튼 */}
           <Button
             variant="default"
@@ -324,9 +439,17 @@ export default function LinksPage() {
         {/* ─── 링크 목록 섹션 (핵심 기능) ─── */}
         <section className="mt-4 flex flex-col gap-3">
           <div className="flex items-center justify-between px-1">
-            <h2 className="text-sm font-bold text-foreground">
-              링크 목록 ({filteredLinks.length})
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-bold text-foreground">
+                링크 목록 ({filteredLinks.length})
+              </h2>
+              {isSyncing && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 animate-in fade-in">
+                  <Loader2 className="size-3 animate-spin" />
+                  <span>동기화 중...</span>
+                </span>
+              )}
+            </div>
 
             <Button
               variant="outline"
@@ -340,7 +463,23 @@ export default function LinksPage() {
           </div>
 
           {/* 링크 카드 리스트 */}
-          {filteredLinks.length === 0 ? (
+          {isLoading ? (
+            <div className="flex flex-col gap-3 py-2">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="flex h-20 w-full animate-pulse items-center gap-3.5 rounded-2xl border border-border bg-card p-4 shadow-xs"
+                >
+                  <div className="size-12 rounded-xl bg-muted" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-2/5 rounded-md bg-muted" />
+                    <div className="h-3 w-4/5 rounded-md bg-muted/60" />
+                  </div>
+                  <div className="size-8 rounded-full bg-muted" />
+                </div>
+              ))}
+            </div>
+          ) : filteredLinks.length === 0 ? (
             <Card className="flex flex-col items-center justify-center border-dashed py-12 text-center bg-card">
               <span className="text-3xl">🔍</span>
               <p className="mt-2 text-sm font-semibold text-muted-foreground">
@@ -372,6 +511,9 @@ export default function LinksPage() {
                 key={link.id}
                 link={link}
                 onClick={handleLinkClick}
+                onUpdate={handleUpdateLink}
+                onDeleteRequest={handleDeleteRequest}
+                isDeleting={deletingId === link.id}
               />
             ))
           )}
@@ -396,6 +538,17 @@ export default function LinksPage() {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onAddLink={handleAddLink}
+      />
+
+      {/* ─── 링크 삭제 확인 모달 ─── */}
+      <DeleteLinkDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        link={deleteTarget}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
       />
 
       {/* ─── 토스트 알림 ─── */}

@@ -4,6 +4,7 @@ import {
   collection,
   doc,
   addDoc,
+  deleteDoc,
   getDocs,
   onSnapshot,
   query,
@@ -46,11 +47,13 @@ function mapDocToLinkItem(id: string, data: DocumentData): LinkItem {
     badge: data.badge || undefined,
     clickCount: typeof data.clickCount === "number" ? data.clickCount : 0,
     category: data.category || "work",
+    createdAt: data.createdAt,
   };
 }
 
 /**
  * 새 링크를 Firestore 'users/anonymous/links' 컬렉션에 추가
+ * - createdAt: serverTimestamp() 기준으로 저장
  * - undefined 필드를 방지하여 Firestore 에러를 차단합니다.
  */
 export async function addLinkToFirestore(
@@ -97,18 +100,33 @@ export async function addLinkToFirestore(
     clickCount: docPayload.clickCount as number,
     description: (docPayload.description as string) || undefined,
     badge: (docPayload.badge as string) || undefined,
+    createdAt: new Date(),
   };
 }
 
 /**
- * Firestore의 'users/anonymous/links' 목록을 실시간 구독(onSnapshot)
+ * Firestore 'users/anonymous/links' 경로에서 createdAt 기준 최신순(desc)으로 1회 조회
+ */
+export async function getLinksFromFirestore(): Promise<LinkItem[]> {
+  const linksRef = getLinksCollectionRef();
+  const linksQuery = query(linksRef, orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(linksQuery);
+
+  return snapshot.docs.map((docSnap) =>
+    mapDocToLinkItem(docSnap.id, docSnap.data())
+  );
+}
+
+/**
+ * Firestore의 'users/anonymous/links' 목록을 createdAt 기준 최신순(desc)으로 실시간 구독(onSnapshot)
+ * - 페이지 로드 시 초기 데이터를 수신하고, 링크 추가/수정/삭제 시 실시간으로 콜백이 실행됩니다.
  */
 export function subscribeToLinks(
   onSuccess: (links: LinkItem[]) => void,
   onError?: (error: Error) => void
 ): Unsubscribe {
   const linksRef = getLinksCollectionRef();
-  const linksQuery = query(linksRef, orderBy("order", "asc"));
+  const linksQuery = query(linksRef, orderBy("createdAt", "desc"));
 
   return onSnapshot(
     linksQuery,
@@ -119,10 +137,58 @@ export function subscribeToLinks(
       onSuccess(items);
     },
     (error) => {
-      console.error("[Firestore] links 실시간 구독 에러:", error);
+      console.error("[Firestore] links 실시간 구독 에러 (createdAt desc):", error);
       if (onError) onError(error);
     }
   );
+}
+
+/**
+ * Firestore 링크 수정 (users/anonymous/links/{linkId})
+ */
+export async function updateLinkInFirestore(
+  linkId: string,
+  updates: Partial<Pick<LinkItem, "title" | "url" | "description" | "category" | "icon" | "color" | "badge" | "isActive">>
+): Promise<void> {
+  const linkDocRef = doc(db, USERS_COLLECTION, ANONYMOUS_DOC, LINKS_SUBCOLLECTION, linkId);
+  const docPayload: Record<string, unknown> = {
+    updatedAt: serverTimestamp(),
+  };
+
+  if (updates.title !== undefined) {
+    docPayload.title = updates.title.trim();
+  }
+  if (updates.url !== undefined) {
+    docPayload.url = updates.url.trim();
+  }
+  if (updates.description !== undefined) {
+    docPayload.description = updates.description.trim() || null;
+  }
+  if (updates.category !== undefined) {
+    docPayload.category = updates.category;
+  }
+  if (updates.icon !== undefined) {
+    docPayload.icon = updates.icon.trim() || "🔗";
+  }
+  if (updates.color !== undefined) {
+    docPayload.color = updates.color;
+  }
+  if (updates.badge !== undefined) {
+    docPayload.badge = updates.badge.trim() || null;
+  }
+  if (updates.isActive !== undefined) {
+    docPayload.isActive = updates.isActive;
+  }
+
+  await updateDoc(linkDocRef, docPayload);
+}
+
+/**
+ * Firestore 링크 삭제 (users/anonymous/links/{linkId})
+ */
+export async function deleteLinkFromFirestore(linkId: string): Promise<void> {
+  const linkDocRef = doc(db, USERS_COLLECTION, ANONYMOUS_DOC, LINKS_SUBCOLLECTION, linkId);
+  await deleteDoc(linkDocRef);
 }
 
 /**
