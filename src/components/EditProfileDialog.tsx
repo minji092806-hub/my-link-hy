@@ -20,12 +20,12 @@ import { cn } from '@/lib/utils';
 import {
   UserData,
   checkDisplayNameDuplicate,
-  updateUserProfileData,
   getEmailPrefix,
   uploadProfileImageFile,
   uploadProfileImageBlob,
   compressProfileImage,
 } from '@/lib/authService';
+import { useUpdateProfile } from '@/hooks/useProfile';
 import {
   User as UserIcon,
   Check,
@@ -49,7 +49,8 @@ interface EditProfileDialogProps {
   onOpenChange: (open: boolean) => void;
   userProfile: UserData | null;
   currentUser: User | null;
-  onProfileUpdated: (updated: UserData) => void;
+  onProfileUpdated?: (updated: UserData) => void;
+  onErrorToast?: (msg: string) => void;
 }
 
 type CheckStatus = 'current' | 'idle' | 'checking' | 'available' | 'duplicate' | 'invalid';
@@ -80,8 +81,10 @@ export function EditProfileDialog({
   userProfile,
   currentUser,
   onProfileUpdated,
+  onErrorToast,
 }: EditProfileDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const updateProfileMutation = useUpdateProfile();
 
   // 원래 초기값
   const initialDisplayName = useMemo(() => {
@@ -327,18 +330,34 @@ export function EditProfileDialog({
         finalPhotoURL = await uploadProfileImageFile(currentUser.uid, selectedFile);
       }
 
-      setSubmittingStep('프로필 정보 저장 중...');
       const cleanHandle = handle.trim().replace(/^@+/, '');
       const finalHandle = cleanHandle ? `@${cleanHandle}` : `@${trimmedName}`;
 
-      const updated = await updateUserProfileData(currentUser.uid, {
+      const updates = {
         displayName: trimmedName,
         handle: finalHandle,
         bio: bio.trim(),
         photoURL: finalPhotoURL,
-      });
+      };
 
-      onProfileUpdated(updated);
+      // ── TanStack Query 낙관적 업데이트 Mutation 실행 ──
+      // onMutate가 호출되어 화면이 0초 만에 즉시 갱신되며, 에러 시 이전 상태로 자동 롤백됩니다.
+      updateProfileMutation.mutate(
+        {
+          uid: currentUser.uid,
+          updates,
+        },
+        {
+          onSuccess: (updated) => {
+            onProfileUpdated?.(updated);
+          },
+          onError: () => {
+            onErrorToast?.('프로필 저장에 실패하여 원래대로 복구되었어요 ⚠️');
+          },
+        }
+      );
+
+      // 다이얼로그 즉시 닫기 (사용자 대기시간 0초)
       onOpenChange(false);
     } catch (err) {
       console.error('프로필 저장 에러:', err);

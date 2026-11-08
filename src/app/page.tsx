@@ -15,6 +15,7 @@ import { AddLinkDialog } from '@/components/AddLinkDialog';
 import { EditLinkDialog } from '@/components/EditLinkDialog';
 import { DeleteLinkDialog } from '@/components/DeleteLinkDialog';
 import { EditProfileDialog } from '@/components/EditProfileDialog';
+import { useProfile } from '@/hooks/useProfile';
 import { cn } from '@/lib/utils';
 import { MyLinkIntro } from '@/components/MyLinkIntro';
 import {
@@ -127,11 +128,15 @@ export default function LinksPage() {
   const [isCopied, setIsCopied] = useState(false);
   const [totalViews] = useState(3842);
 
+  // TanStack Query 프로필 조회 & 낙관적 업데이트 캐시 실시간 연동
+  const { data: cachedProfile } = useProfile(currentUser?.uid);
+  const activeUserProfile = cachedProfile ?? userProfile;
+
   // 디스플레이 네임: 이메일 앞부분(@ 이전) 사용
   const userDisplayName = useMemo(() => {
     if (!currentUser) return '김민지';
-    return userProfile?.displayName || getEmailPrefix(currentUser.email, currentUser.displayName);
-  }, [currentUser, userProfile]);
+    return activeUserProfile?.displayName || getEmailPrefix(currentUser.email, currentUser.displayName);
+  }, [currentUser, activeUserProfile]);
 
   // 토스트 메시지 헬퍼
   const showToast = useCallback((msg: string) => {
@@ -527,7 +532,7 @@ export default function LinksPage() {
 
           {currentUser ? (
             <Badge variant="blue" className="text-[11px] font-semibold px-2 py-0.5 ml-1 hidden xs:inline-flex">
-              {userProfile?.handle || `@${userDisplayName}`}
+              {activeUserProfile?.handle || `@${userDisplayName}`}
             </Badge>
           ) : (
             <Badge variant="secondary" className="text-[11px] font-medium px-2 py-0.5 ml-1 hidden xs:inline-flex">
@@ -552,9 +557,9 @@ export default function LinksPage() {
                 className="flex items-center gap-2 rounded-full bg-muted/60 pl-1.5 pr-3 py-1 border border-border/60 hover:bg-muted/90 cursor-pointer transition-colors"
               >
                 <Avatar className="size-6 rounded-full ring-1 ring-border">
-                  {userProfile?.photoURL || currentUser.photoURL ? (
+                  {activeUserProfile?.photoURL || currentUser.photoURL ? (
                     <AvatarImage
-                      src={userProfile?.photoURL || currentUser.photoURL || ''}
+                      src={activeUserProfile?.photoURL || currentUser.photoURL || ''}
                       alt={userDisplayName}
                       className="object-cover"
                     />
@@ -705,9 +710,9 @@ export default function LinksPage() {
               )}
               title={currentUser ? '클릭하여 프로필 수정' : undefined}
             >
-              {userProfile?.photoURL || currentUser?.photoURL ? (
+              {activeUserProfile?.photoURL || currentUser?.photoURL ? (
                 <AvatarImage
-                  src={userProfile?.photoURL || currentUser?.photoURL || ''}
+                  src={activeUserProfile?.photoURL || currentUser?.photoURL || ''}
                   alt={userDisplayName}
                 />
               ) : null}
@@ -758,14 +763,14 @@ export default function LinksPage() {
 
           <p className="mt-1 text-xs font-medium text-muted-foreground font-mono">
             {currentUser
-              ? (userProfile?.handle || `@${userDisplayName}`)
+              ? (activeUserProfile?.handle || `@${userDisplayName}`)
               : '@minji_art'}
           </p>
 
           {/* 소개글 */}
           <p className="mt-2.5 max-w-xs text-sm leading-relaxed text-muted-foreground">
             {currentUser ? (
-              userProfile?.bio || `${userDisplayName}님의 개인 마이링크 페이지예요.`
+              activeUserProfile?.bio || `${userDisplayName}님의 개인 마이링크 페이지예요.`
             ) : (
               <>
                 일상 속 작은 온기를 그리는 웹툰 작가예요.<br />
@@ -1004,13 +1009,14 @@ export default function LinksPage() {
         isDeleting={isDeleting}
       />
 
-      {/* ─── 프로필 수정 다이얼로그 (Display Name 중복 확인 포함) ─── */}
+      {/* ─── 프로필 수정 다이얼로그 (TanStack Query 낙관적 업데이트 적용) ─── */}
       <EditProfileDialog
         open={isProfileDialogOpen}
         onOpenChange={setIsProfileDialogOpen}
-        userProfile={userProfile}
+        userProfile={activeUserProfile}
         currentUser={currentUser}
         onProfileUpdated={handleProfileUpdated}
+        onErrorToast={showToast}
       />
 
       {/* ─── 토스트 알림 ─── */}

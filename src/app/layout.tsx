@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "웹툰 작가 김민지(꺄륵)의 공식 바이오링크 및 작업 포트폴리오",
 };
 
+import { QueryProvider } from "@/components/providers/QueryProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,7 +28,9 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <QueryProvider>{children}</QueryProvider>
+      </body>
     </html>
   );
 }
