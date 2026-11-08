@@ -51,12 +51,10 @@ import {
   RefreshCw,
   LogIn,
   LogOut,
-  ShieldCheck,
   ShieldAlert,
   FolderLock,
   User as UserIcon,
   Info,
-  Layers,
   Pencil,
   Eye,
 } from 'lucide-react';
@@ -623,21 +621,6 @@ export default function LinksPage() {
           </Card>
         )}
 
-        {/* ─── 로그인 시: 개인화된 Firestore 경로 및 권한 안내 배너 ─── */}
-        {currentUser && (
-          <div className="mb-5 flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-2 text-xs text-blue-700 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-300">
-            <div className="flex items-center gap-2 truncate">
-              <ShieldCheck className="size-4 shrink-0 text-blue-600 dark:text-blue-400" />
-              <span className="font-semibold truncate">
-                내 저장소: <code className="font-mono text-[11px]">users/{currentUser.uid}/links</code>
-              </span>
-            </div>
-            <span className="shrink-0 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-bold text-white">
-              수정 권한 활성
-            </span>
-          </div>
-        )}
-
         {/* ─── 프로필 섹션 (해당 경로의 유저 정보 화면 표시) ─── */}
         <section className="flex flex-col items-center text-center">
           {/* 아바타 */}
@@ -718,14 +701,6 @@ export default function LinksPage() {
               </>
             )}
           </p>
-
-          {/* Firestore 경로 상세 정보 칩 (해당 경로의 유저 정보 표시) */}
-          {!isPreviewMode && currentUser && (
-            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-muted/80 px-2.5 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-medium text-muted-foreground border border-border/80">
-              <Layers className="size-2.5 sm:size-3 text-blue-600" />
-              <span>경로: users/{currentUser.uid}/links</span>
-            </div>
-          )}
 
           {/* 프로필 액션 버튼 (프로필 수정 & 링크 복사 & 공유하기) */}
           <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">

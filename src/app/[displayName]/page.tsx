@@ -50,7 +50,6 @@ import {
   Plus,
   Loader2,
   RefreshCw,
-  Layers,
   Pencil,
   ExternalLink,
   ShieldCheck,
@@ -529,8 +528,8 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
 
       {/* ── 메인 셸 (최대 480px) ── */}
       <main className="mx-auto max-w-[480px] px-4 pt-5 pb-20 sm:px-5">
-        {/* 본인 페이지인지 타인 페이지인지 안내 배너 */}
-        {isOwner ? (
+        {/* 본인 페이지 안내 배너 */}
+        {isOwner && (
           <div className="mb-5 flex items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50/80 p-3 text-xs text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-300 shadow-xs">
             <div className="flex items-center gap-2 min-w-0">
               <UserCheck className="size-4 shrink-0 text-blue-600 dark:text-blue-400" />
@@ -545,18 +544,6 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
               <Pencil className="size-3" />
               <span>통합 관리 홈으로 가기</span>
             </Link>
-          </div>
-        ) : (
-          <div className="mb-5 flex items-center justify-between rounded-xl border border-border bg-card px-3.5 py-2 text-xs text-muted-foreground shadow-xs">
-            <div className="flex items-center gap-2 truncate">
-              <Sparkles className="size-3.5 text-blue-600" />
-              <span className="truncate">
-                <strong className="text-foreground">{targetDisplayName}</strong> 님의 공식 프로필 공간
-              </span>
-            </div>
-            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-foreground">
-              공개 뷰
-            </span>
           </div>
         )}
 
@@ -624,12 +611,6 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
           <p className="mt-2.5 max-w-xs text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
             {targetBio}
           </p>
-
-          {/* Firestore 컬렉션 경로 표기 (users/{userId}/links) */}
-          <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-muted/80 px-3 py-1 text-[11px] font-medium text-muted-foreground border border-border/80">
-            <Layers className="size-3 text-blue-600" />
-            <span>경로: users/{targetUser.uid}/links</span>
-          </div>
 
           {/* 빠른 액션 버튼 */}
           <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2">

@@ -14,10 +14,6 @@ import {
   Loader2,
   RefreshCw,
   Plus,
-  Share2,
-  Copy,
-  Check,
-  Pencil,
   ChevronDown,
   Eye,
   Sparkles,
@@ -340,33 +336,6 @@ export function Header({
             <span className="hidden xs:inline sm:hidden">
               {isPreviewMode ? '복귀' : '미리보기'}
             </span>
-          </Button>
-        )}
-
-        {/* 링크 복사하기 버튼 */}
-        {onCopyLink && (
-          <Button
-            variant={isCopied ? 'default' : 'outline'}
-            size="sm"
-            onClick={onCopyLink}
-            className="rounded-full gap-1 text-xs font-semibold h-7.5 sm:h-8 px-2 sm:px-3 cursor-pointer shadow-xs shrink-0"
-            title="마이링크 주소 복사"
-          >
-            {isCopied ? <Check className="size-3.5 text-green-500" /> : <Copy className="size-3.5" />}
-            <span className="hidden xs:inline">{isCopied ? '복사됨!' : '링크 복사'}</span>
-          </Button>
-        )}
-
-        {/* 공유하기 버튼 */}
-        {onShare && (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onShare}
-            className="rounded-full gap-1 text-xs font-semibold h-7.5 sm:h-8 px-2 sm:px-3 cursor-pointer shadow-xs shrink-0"
-          >
-            <Share2 className="size-3.5" />
-            <span className="hidden xs:inline">공유</span>
           </Button>
         )}
       </div>
