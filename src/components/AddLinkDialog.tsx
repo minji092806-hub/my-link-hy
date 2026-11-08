@@ -31,12 +31,13 @@ import {
   AlertCircle,
   Check,
   CheckCircle2,
+  Loader2,
 } from 'lucide-react';
 
 interface AddLinkDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddLink: (newLink: Omit<LinkItem, 'id' | 'order' | 'clickCount'>) => void;
+  onAddLink: (newLink: Omit<LinkItem, 'id' | 'order' | 'clickCount'>) => Promise<void> | void;
 }
 
 // ─── 상수 정의 ─────────────────────────────────────────────────────────
@@ -195,20 +196,29 @@ export function AddLinkDialog({ open, onOpenChange, onAddLink }: AddLinkDialogPr
     onOpenChange(nextOpen);
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // 폼 검증 성공 시 제출
-  const onValidSubmit = (data: AddLinkFormOutput) => {
-    const finalUrl = normalizeUrl(data.url);
-    onAddLink({
-      title: data.title,
-      url: finalUrl,
-      description: data.description?.trim() || undefined,
-      icon: (data.icon && data.icon.trim()) || '🔗',
-      category: data.category,
-      badge: data.badge && data.badge !== '없음' ? data.badge : undefined,
-      color: data.color,
-      isActive: true,
-    });
-    handleOpenChange(false);
+  const onValidSubmit = async (data: AddLinkFormOutput) => {
+    try {
+      setIsSubmitting(true);
+      const finalUrl = normalizeUrl(data.url);
+      await onAddLink({
+        title: data.title,
+        url: finalUrl,
+        description: data.description?.trim() || undefined,
+        icon: (data.icon && data.icon.trim()) || '🔗',
+        category: data.category,
+        badge: data.badge && data.badge !== '없음' ? data.badge : undefined,
+        color: data.color,
+        isActive: true,
+      });
+      handleOpenChange(false);
+    } catch (err) {
+      console.error('Failed to save link:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // 폼 검증 실패 시 셰이크 애니메이션 트리거
@@ -562,17 +572,25 @@ export function AddLinkDialog({ open, onOpenChange, onAddLink }: AddLinkDialogPr
             <Button
               type="submit"
               disabled={
+                isSubmitting ||
                 /* 필수 필드가 터치된 후 에러가 있거나 이미 유효하지 않을 때 비활성화 */
                 (touchedFields.title && !!errors.title) || (touchedFields.url && !!errors.url)
               }
               className={cn(
-                'h-10 px-6 rounded-xl font-bold text-white shadow-sm cursor-pointer transition-all',
-                isValid
+                'h-10 px-6 rounded-xl font-bold text-white shadow-sm cursor-pointer transition-all flex items-center gap-2',
+                isValid && !isSubmitting
                   ? 'bg-blue-600 hover:bg-blue-700'
                   : 'bg-blue-400 opacity-70 cursor-not-allowed'
               )}
             >
-              저장
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  <span>저장 중...</span>
+                </>
+              ) : (
+                '저장'
+              )}
             </Button>
           </DialogFooter>
         </form>

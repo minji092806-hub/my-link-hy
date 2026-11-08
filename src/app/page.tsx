@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { DUMMY_LINKS } from '@/data/links';
 import type { LinkItem } from '@/types';
 import { LinkCard } from '@/components/LinkCard';
@@ -12,6 +12,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Toast } from '@/components/toss/Toast';
 import { AddLinkDialog } from '@/components/AddLinkDialog';
 import { cn } from '@/lib/utils';
+import {
+  addLinkToFirestore,
+  subscribeToLinks,
+  incrementClickCountInFirestore,
+} from '@/lib/linkService';
 import {
   Share2,
   Copy,
@@ -50,6 +55,22 @@ export default function LinksPage() {
   const [totalViews] = useState(3842);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
+  // Firestore 실시간 구독 (경로: users/anonymous/links)
+  useEffect(() => {
+    const unsubscribe = subscribeToLinks(
+      (firestoreLinks) => {
+        if (firestoreLinks.length > 0) {
+          setLinks(firestoreLinks);
+        }
+      },
+      (error) => {
+        console.warn('Firestore links 구독 실패, 기본 데이터를 유지합니다:', error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
   // 토스트 메시지 헬퍼
   const showToast = useCallback((msg: string) => {
     setToastMsg(msg);
@@ -59,24 +80,33 @@ export default function LinksPage() {
     }, 2200);
   }, []);
 
-  // 링크 추가 핸들러 (다이얼로그에서 저장 클릭 시 목록 최상단에 추가)
+  // 링크 추가 핸들러 (Firestore 'users/anonymous/links' 에 저장)
   const handleAddLink = useCallback(
-    (newLinkData: Omit<LinkItem, 'id' | 'order' | 'clickCount'>) => {
-      const newLink: LinkItem = {
-        ...newLinkData,
-        id: `link-${Date.now()}`,
-        order: 1,
-        clickCount: 0,
-        isActive: true,
-      };
+    async (newLinkData: Omit<LinkItem, 'id' | 'order' | 'clickCount'>) => {
+      try {
+        const savedLink = await addLinkToFirestore({
+          ...newLinkData,
+          order: 1,
+          clickCount: 0,
+          isActive: true,
+        });
 
-      setLinks((prev) => [newLink, ...prev.map((item, idx) => ({ ...item, order: idx + 2 }))]);
+        // 실시간 구독 외에도 즉각적인 낙관적 UI 반영
+        setLinks((prev) => {
+          const withoutDup = prev.filter((item) => item.id !== savedLink.id);
+          return [savedLink, ...withoutDup.map((item, idx) => ({ ...item, order: idx + 2 }))];
+        });
 
-      if (newLinkData.category && selectedCategory !== 'all' && selectedCategory !== newLinkData.category) {
-        setSelectedCategory(newLinkData.category);
+        if (newLinkData.category && selectedCategory !== 'all' && selectedCategory !== newLinkData.category) {
+          setSelectedCategory(newLinkData.category);
+        }
+
+        showToast(`'${newLinkData.title}' 링크가 Firestore에 안전하게 저장되었어요! ✨`);
+      } catch (error) {
+        console.error('Firestore 저장 중 에러 발생:', error);
+        showToast('링크 저장에 실패했어요. 다시 시도해주세요.');
+        throw error;
       }
-
-      showToast(`'${newLinkData.title}' 링크가 페이지에 추가되었어요! ✨`);
     },
     [selectedCategory, showToast]
   );
@@ -92,7 +122,7 @@ export default function LinksPage() {
     return links.filter((link) => link.category === selectedCategory);
   }, [links, selectedCategory]);
 
-  // 링크 클릭 핸들러 (낙관적 클릭수 증가)
+  // 링크 클릭 핸들러 (낙관적 클릭수 증가 및 Firestore 동기화)
   const handleLinkClick = useCallback((targetLink: LinkItem) => {
     setLinks((prev) =>
       prev.map((item) =>
@@ -101,6 +131,8 @@ export default function LinksPage() {
           : item
       )
     );
+    // Firestore 원자적 클릭 카운트 증가
+    incrementClickCountInFirestore(targetLink.id);
   }, []);
 
   // 상단 공유하기
