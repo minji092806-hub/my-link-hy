@@ -15,15 +15,19 @@ import {
   RefreshCw,
   Plus,
   Share2,
+  Copy,
+  Check,
   Pencil,
   ChevronDown,
   Eye,
+  Sparkles,
 } from 'lucide-react';
 
 interface HeaderProps {
   currentUser: User | null;
   userProfile?: UserData | null;
   userDisplayName: string;
+  userHandleId?: string;
   isAuthLoading?: boolean;
   isLoggingIn?: boolean;
   isLoggingOut?: boolean;
@@ -35,6 +39,8 @@ interface HeaderProps {
   isSyncing?: boolean;
   isLoading?: boolean;
   onShare?: () => void;
+  onCopyLink?: () => void;
+  isCopied?: boolean;
   onOpenPreview?: () => void;
   isPreviewMode?: boolean;
 }
@@ -69,6 +75,7 @@ export function Header({
   currentUser,
   userProfile,
   userDisplayName,
+  userHandleId,
   isAuthLoading = false,
   isLoggingIn = false,
   isLoggingOut = false,
@@ -80,11 +87,21 @@ export function Header({
   isSyncing = false,
   isLoading = false,
   onShare,
+  onCopyLink,
+  isCopied = false,
   onOpenPreview,
   isPreviewMode = false,
 }: HeaderProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // 사용자 핸들 ID 기반 개인 페이지 링크 (예: /kkyareuk)
+  const effectiveHandleId =
+    (userHandleId && userHandleId.trim()) ||
+    (userProfile?.handle ? userProfile.handle.trim().replace(/^@/, '') : '') ||
+    userDisplayName;
+
+  const userPageHref = `/${encodeURIComponent(effectiveHandleId || 'user')}`;
 
   // 바깥 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -214,6 +231,23 @@ export function Header({
                   </div>
                 </div>
 
+                {/* 개인별 페이지 이동 (핸들 ID 기반) */}
+                <Link
+                  href={userPageHref}
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-foreground hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/40 transition-colors"
+                >
+                  <span className="flex size-6 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/50">
+                    <Sparkles className="size-3.5" />
+                  </span>
+                  <div className="flex flex-col text-left flex-1 min-w-0">
+                    <span className="font-bold">내 마이링크 방문</span>
+                    <span className="text-[10px] text-muted-foreground truncate font-mono">
+                      /{effectiveHandleId}
+                    </span>
+                  </div>
+                </Link>
+
                 <div className="h-px bg-border/70 my-1" />
 
                 {/* 로그아웃 버튼 */}
@@ -306,6 +340,20 @@ export function Header({
             <span className="hidden xs:inline sm:hidden">
               {isPreviewMode ? '복귀' : '미리보기'}
             </span>
+          </Button>
+        )}
+
+        {/* 링크 복사하기 버튼 */}
+        {onCopyLink && (
+          <Button
+            variant={isCopied ? 'default' : 'outline'}
+            size="sm"
+            onClick={onCopyLink}
+            className="rounded-full gap-1 text-xs font-semibold h-7.5 sm:h-8 px-2 sm:px-3 cursor-pointer shadow-xs shrink-0"
+            title="마이링크 주소 복사"
+          >
+            {isCopied ? <Check className="size-3.5 text-green-500" /> : <Copy className="size-3.5" />}
+            <span className="hidden xs:inline">{isCopied ? '복사됨!' : '링크 복사'}</span>
           </Button>
         )}
 

@@ -134,28 +134,41 @@ export async function getUserProfile(uid: string): Promise<UserData | null> {
 }
 
 /**
- * displayName으로 유저 검색
- * - Firestore users 컬렉션에서 displayName 일치 여부 확인
- * - 없으면 handle 일치 여부도 확인 (@ 포함/미포함 유연하게 대응)
+ * 사용자 핸들에서 '@'를 제거한 순수 ID 반환 (URL 슬러그용)
+ * 예: "@kkyareuk" -> "kkyareuk"
+ */
+export function getUserHandleId(
+  handle?: string | null,
+  email?: string | null,
+  fallback?: string | null
+): string {
+  if (handle && handle.trim()) {
+    const trimmed = handle.trim();
+    const clean = trimmed.startsWith('@') ? trimmed.slice(1) : trimmed;
+    if (clean) return clean;
+  }
+  if (email && email.includes('@')) {
+    return email.split('@')[0];
+  }
+  return fallback || 'user';
+}
+
+/**
+ * 사용자 검색 (핸들 ID 우선, 그다음 displayName, uid 순서로 검색)
+ * - Firestore users 컬렉션에서 handle 일치 여부 확인 (@ 포함/미포함 유연하게 대응)
+ * - 없으면 displayName 일치 여부 확인
+ * - 없으면 uid 직접 조회
  * - 일치하는 유저가 없으면 null 반환
  */
-export async function getUserByDisplayName(rawDisplayName: string): Promise<UserData | null> {
-  if (!rawDisplayName) return null;
-  const decoded = decodeURIComponent(rawDisplayName).trim();
+export async function getUserByDisplayName(rawIdentifier: string): Promise<UserData | null> {
+  if (!rawIdentifier) return null;
+  const decoded = decodeURIComponent(rawIdentifier).trim();
   if (!decoded) return null;
 
   try {
     const usersRef = collection(db, "users");
 
-    // 1. displayName 정확 일치 쿼리
-    const qName = query(usersRef, where("displayName", "==", decoded));
-    const snapName = await getDocs(qName);
-    if (!snapName.empty) {
-      const docSnap = snapName.docs[0];
-      return { ...docSnap.data(), uid: docSnap.id } as UserData;
-    }
-
-    // 2. handle 일치 여부 검색 (@ 접두사 보정)
+    // 1. handle 일치 여부 최우선 검색 (예: kkyareuk 또는 @kkyareuk)
     const handleWithoutAt = decoded.startsWith("@") ? decoded.slice(1) : decoded;
     const handleWithAt = `@${handleWithoutAt}`;
 
@@ -173,6 +186,14 @@ export async function getUserByDisplayName(rawDisplayName: string): Promise<User
       return { ...docSnap.data(), uid: docSnap.id } as UserData;
     }
 
+    // 2. displayName 정확 일치 쿼리
+    const qName = query(usersRef, where("displayName", "==", decoded));
+    const snapName = await getDocs(qName);
+    if (!snapName.empty) {
+      const docSnap = snapName.docs[0];
+      return { ...docSnap.data(), uid: docSnap.id } as UserData;
+    }
+
     // 3. uid 자체로 접근한 경우도 지원
     const directDocRef = doc(db, "users", decoded);
     const directSnap = await getDoc(directDocRef);
@@ -180,7 +201,7 @@ export async function getUserByDisplayName(rawDisplayName: string): Promise<User
       return { ...directSnap.data(), uid: directSnap.id } as UserData;
     }
   } catch (error) {
-    console.error("[Firestore] displayName으로 유저 검색 에러:", error);
+    console.error("[Firestore] 유저 검색 에러:", error);
   }
 
   return null;

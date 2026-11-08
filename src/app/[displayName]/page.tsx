@@ -34,6 +34,7 @@ import {
   getUserProfile,
   getUserByDisplayName,
   getEmailPrefix,
+  getUserHandleId,
   type UserData,
 } from '@/lib/authService';
 import {
@@ -123,9 +124,18 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
     return activeCurrentProfile?.displayName || getEmailPrefix(currentUser.email, currentUser.displayName);
   }, [currentUser, activeCurrentProfile]);
 
+  const currentHandleId = useMemo(() => {
+    return getUserHandleId(activeCurrentProfile?.handle, currentUser?.email, currentDisplayName);
+  }, [activeCurrentProfile?.handle, currentUser?.email, currentDisplayName]);
+
   // 대상 유저 프로필 캐시
   const { data: cachedTargetProfile } = useProfile(targetUser?.uid);
   const activeTargetProfile = cachedTargetProfile ?? targetUser;
+
+  // 대상 유저 핸들 ID (URL 슬러그)
+  const targetHandleId = useMemo(() => {
+    return getUserHandleId(activeTargetProfile?.handle, targetUser?.email, decodedDisplayName);
+  }, [activeTargetProfile?.handle, targetUser?.email, decodedDisplayName]);
 
   // 본인 페이지인지 여부
   const isOwner = useMemo(() => {
@@ -417,18 +427,20 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
   );
 
   // 프로필 링크 복사 & 공유
+  // 프로필 링크 복사 & 공유 (사용자 핸들 ID 기반)
   const handleCopyProfileLink = useCallback(() => {
     if (typeof window === 'undefined') return;
-    navigator.clipboard?.writeText(window.location.href).then(() => {
+    const shareUrl = `${window.location.origin}/${encodeURIComponent(targetHandleId)}`;
+    navigator.clipboard?.writeText(shareUrl).then(() => {
       setIsCopied(true);
-      showToast('프로필 링크가 복사되었어요 🔗');
+      showToast(`프로필 주소가 복사되었어요 🔗 (${shareUrl})`);
       setTimeout(() => setIsCopied(false), 2000);
     });
-  }, [showToast]);
+  }, [targetHandleId, showToast]);
 
   const handleShare = useCallback(() => {
     if (typeof window === 'undefined') return;
-    const shareUrl = window.location.href;
+    const shareUrl = `${window.location.origin}/${encodeURIComponent(targetHandleId)}`;
     const name = activeTargetProfile?.displayName || decodedDisplayName;
 
     if (navigator.share) {
@@ -441,10 +453,10 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
         .catch(() => null);
     } else {
       navigator.clipboard?.writeText(shareUrl).then(() => {
-        showToast('공유 링크가 클립보드에 복사되었어요 🔗');
+        showToast(`공유 주소가 클립보드에 복사되었어요 🔗 (${shareUrl})`);
       });
     }
-  }, [activeTargetProfile, decodedDisplayName, showToast]);
+  }, [targetHandleId, activeTargetProfile, decodedDisplayName, showToast]);
 
   // 프로필 업데이트 콜백
   const handleProfileUpdated = useCallback((updated: UserData) => {
@@ -499,6 +511,7 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
         currentUser={currentUser}
         userProfile={activeCurrentProfile}
         userDisplayName={currentDisplayName}
+        userHandleId={currentHandleId}
         isAuthLoading={isAuthLoading}
         isLoggingIn={isLoggingIn}
         isLoggingOut={isLoggingOut}
@@ -510,6 +523,8 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
         isSyncing={isSyncing}
         isLoading={isLoadingLinks}
         onShare={handleShare}
+        onCopyLink={handleCopyProfileLink}
+        isCopied={isCopied}
       />
 
       {/* ── 메인 셸 (최대 480px) ── */}
@@ -629,6 +644,17 @@ export default function UserProfilePage({ params }: UserProfilePageProps) {
                 <span>프로필 수정</span>
               </Button>
             )}
+
+            <Button
+              variant={isCopied ? 'default' : 'outline'}
+              size="sm"
+              onClick={handleCopyProfileLink}
+              className="rounded-full text-xs font-semibold gap-1.5 h-8 px-3.5 cursor-pointer shadow-xs"
+              title="마이링크 주소 복사"
+            >
+              {isCopied ? <Check className="size-3.5 text-green-500" /> : <Copy className="size-3.5 text-blue-600" />}
+              <span>{isCopied ? '복사됨!' : '링크 복사'}</span>
+            </Button>
 
             <Button
               variant="outline"

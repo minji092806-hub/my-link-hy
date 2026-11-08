@@ -33,6 +33,7 @@ import {
   subscribeAuthState,
   getUserProfile,
   getEmailPrefix,
+  getUserHandleId,
   type UserData,
 } from '@/lib/authService';
 import {
@@ -140,6 +141,11 @@ export default function LinksPage() {
     if (!currentUser) return '김민지';
     return activeUserProfile?.displayName || getEmailPrefix(currentUser.email, currentUser.displayName);
   }, [currentUser, activeUserProfile]);
+
+  // 사용자 핸들 (ID) 추출 (예: "@kkyareuk" -> "kkyareuk", URL 슬러그로 사용)
+  const userHandleId = useMemo(() => {
+    return getUserHandleId(activeUserProfile?.handle, currentUser?.email, userDisplayName);
+  }, [activeUserProfile?.handle, currentUser?.email, userDisplayName]);
 
   // 토스트 메시지 헬퍼
   const showToast = useCallback((msg: string) => {
@@ -459,7 +465,9 @@ export default function LinksPage() {
   // 상단 공유하기
   const handleShare = useCallback(() => {
     if (typeof window === 'undefined') return;
-    const shareUrl = window.location.href;
+    const shareUrl = currentUser
+      ? `${window.location.origin}/${encodeURIComponent(userHandleId)}`
+      : window.location.href;
 
     if (navigator.share) {
       navigator
@@ -471,20 +479,24 @@ export default function LinksPage() {
         .catch(() => null);
     } else {
       navigator.clipboard?.writeText(shareUrl).then(() => {
-        showToast('링크가 클립보드에 복사되었어요 🔗');
+        showToast(`마이링크 주소가 클립보드에 복사되었어요 🔗 (${shareUrl})`);
       });
     }
-  }, [currentUser, showToast]);
+  }, [currentUser, userHandleId, userDisplayName, showToast]);
 
-  // 프로필 링크 복사 버튼
+  // 프로필 링크 복사 버튼 (공유하기 버튼 옆에 위치: 사용자 핸들 ID 기반 URL)
   const handleCopyProfileLink = useCallback(() => {
     if (typeof window === 'undefined') return;
-    navigator.clipboard?.writeText(window.location.href).then(() => {
+    const targetUrl = currentUser
+      ? `${window.location.origin}/${encodeURIComponent(userHandleId)}`
+      : window.location.href;
+
+    navigator.clipboard?.writeText(targetUrl).then(() => {
       setIsCopied(true);
-      showToast('프로필 링크가 복사되었어요 🔗');
+      showToast(`내 마이링크 주소가 복사되었어요! 🔗 (${targetUrl})`);
       setTimeout(() => setIsCopied(false), 2000);
     });
-  }, [showToast]);
+  }, [currentUser, userHandleId, showToast]);
 
   // ─── 0. 인증 상태 로딩 중 ───
   if (isAuthLoading) {
@@ -522,6 +534,7 @@ export default function LinksPage() {
         currentUser={currentUser}
         userProfile={activeUserProfile}
         userDisplayName={userDisplayName}
+        userHandleId={userHandleId}
         isAuthLoading={isAuthLoading}
         isLoggingIn={isLoggingIn}
         isLoggingOut={isLoggingOut}
@@ -533,6 +546,8 @@ export default function LinksPage() {
         isSyncing={isSyncing}
         isLoading={isLoading}
         onShare={handleShare}
+        onCopyLink={handleCopyProfileLink}
+        isCopied={isCopied}
         onOpenPreview={() => setIsPreviewMode((prev) => !prev)}
         isPreviewMode={isPreviewMode}
       />
@@ -712,7 +727,7 @@ export default function LinksPage() {
             </div>
           )}
 
-          {/* 프로필 액션 버튼 (프로필 수정 & 공유하기) */}
+          {/* 프로필 액션 버튼 (프로필 수정 & 링크 복사 & 공유하기) */}
           <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
             {!isPreviewMode && currentUser && (
               <Button
@@ -725,6 +740,16 @@ export default function LinksPage() {
                 <span>프로필 수정</span>
               </Button>
             )}
+            <Button
+              variant={isCopied ? 'default' : 'outline'}
+              size="sm"
+              onClick={handleCopyProfileLink}
+              className="rounded-full text-xs font-bold gap-1.5 h-7.5 sm:h-8 px-3.5 sm:px-4 border-border bg-card hover:bg-muted text-foreground cursor-pointer shadow-xs"
+              title="마이링크 주소 복사"
+            >
+              {isCopied ? <Check className="size-3 sm:size-3.5 text-green-500" /> : <Copy className="size-3 sm:size-3.5 text-blue-600" />}
+              <span>{isCopied ? '복사됨!' : '링크 복사'}</span>
+            </Button>
             <Button
               variant="outline"
               size="sm"
