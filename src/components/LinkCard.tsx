@@ -4,19 +4,28 @@ import * as React from 'react';
 import type { LinkItem } from '@/types';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Eye, ExternalLink } from 'lucide-react';
+import { Eye, ExternalLink, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LinkCardProps {
   link: LinkItem;
   onClick?: (link: LinkItem) => void;
+  onDelete?: (id: string) => void;
   className?: string;
 }
 
-export function LinkCard({ link, onClick, className }: LinkCardProps) {
+export function LinkCard({ link, onClick, onDelete, className }: LinkCardProps) {
   const handleClick = () => {
     if (onClick) {
       onClick(link);
+    }
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onDelete && window.confirm(`'${link.title}' 링크를 삭제할까요?`)) {
+      onDelete(link.id);
     }
   };
 
@@ -85,9 +94,21 @@ export function LinkCard({ link, onClick, className }: LinkCardProps) {
           )}
         </div>
 
-        {/* 우측: 이동 화살표 아이콘 */}
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-all duration-200 group-hover:bg-blue-600 group-hover:text-white group-hover:translate-x-0.5">
-          <ExternalLink className="size-4" />
+        {/* 우측 액션: 삭제 버튼 & 외부 이동 화살표 */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {onDelete && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              title="링크 삭제"
+              className="flex size-8 items-center justify-center rounded-full text-muted-foreground/60 transition-colors hover:bg-red-50 hover:text-red-500 active:scale-95 cursor-pointer dark:hover:bg-red-950/40"
+            >
+              <Trash2 className="size-3.5" />
+            </button>
+          )}
+          <div className="flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground transition-all duration-200 group-hover:bg-blue-600 group-hover:text-white group-hover:translate-x-0.5">
+            <ExternalLink className="size-4" />
+          </div>
         </div>
       </Card>
     </a>

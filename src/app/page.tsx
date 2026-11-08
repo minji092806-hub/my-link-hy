@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Toast } from '@/components/toss/Toast';
+import { AddLinkDialog } from '@/components/AddLinkDialog';
 import { cn } from '@/lib/utils';
 import {
   Share2,
@@ -21,6 +22,7 @@ import {
   ShoppingBag,
   Mail,
   Zap,
+  Plus,
 } from 'lucide-react';
 
 type FilterCategory = 'all' | 'work' | 'sns' | 'shop' | 'contact';
@@ -46,6 +48,7 @@ export default function LinksPage() {
   const [toastVisible, setToastVisible] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [totalViews] = useState(3842);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   // 토스트 메시지 헬퍼
   const showToast = useCallback((msg: string) => {
@@ -55,6 +58,28 @@ export default function LinksPage() {
       setToastVisible(false);
     }, 2200);
   }, []);
+
+  // 링크 추가 핸들러 (다이얼로그에서 저장 클릭 시 목록 최상단에 추가)
+  const handleAddLink = useCallback(
+    (newLinkData: Omit<LinkItem, 'id' | 'order' | 'clickCount'>) => {
+      const newLink: LinkItem = {
+        ...newLinkData,
+        id: `link-${Date.now()}`,
+        order: 1,
+        clickCount: 0,
+        isActive: true,
+      };
+
+      setLinks((prev) => [newLink, ...prev.map((item, idx) => ({ ...item, order: idx + 2 }))]);
+
+      if (newLinkData.category && selectedCategory !== 'all' && selectedCategory !== newLinkData.category) {
+        setSelectedCategory(newLinkData.category);
+      }
+
+      showToast(`'${newLinkData.title}' 링크가 페이지에 추가되었어요! ✨`);
+    },
+    [selectedCategory, showToast]
+  );
 
   // 총 링크 클릭수 합계
   const totalClicks = useMemo(() => {
@@ -124,15 +149,29 @@ export default function LinksPage() {
           </Badge>
         </div>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleShare}
-          className="rounded-full gap-1.5 text-xs font-semibold"
-        >
-          <Share2 className="size-3.5" />
-          <span>공유</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* 새 링크 추가 버튼 */}
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => setIsAddDialogOpen(true)}
+            className="rounded-full gap-1 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs h-8 px-3 cursor-pointer"
+          >
+            <Plus className="size-3.5" />
+            <span>새 링크</span>
+          </Button>
+
+          {/* 공유 버튼 */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleShare}
+            className="rounded-full gap-1.5 text-xs font-semibold h-8 px-3 cursor-pointer"
+          >
+            <Share2 className="size-3.5" />
+            <span>공유</span>
+          </Button>
+        </div>
       </header>
 
       {/* ─── 모바일 최적화 메인 셸 (최대 480px 중앙 정렬) ─── */}
@@ -179,7 +218,7 @@ export default function LinksPage() {
               variant={isCopied ? "default" : "secondary"}
               size="sm"
               onClick={handleCopyProfileLink}
-              className="rounded-full text-xs font-bold gap-1.5 h-8 px-3.5"
+              className="rounded-full text-xs font-bold gap-1.5 h-8 px-3.5 cursor-pointer"
             >
               {isCopied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
               <span>{isCopied ? '복사됨!' : '링크 복사'}</span>
@@ -190,7 +229,7 @@ export default function LinksPage() {
               rel="noopener noreferrer"
               className={cn(
                 buttonVariants({ variant: "outline", size: "sm" }),
-                "rounded-full text-xs font-semibold gap-1.5 h-8 px-3"
+                "rounded-full text-xs font-semibold gap-1.5 h-8 px-3 cursor-pointer"
               )}
             >
               <Camera className="size-3.5 text-pink-500" />
@@ -200,7 +239,7 @@ export default function LinksPage() {
               href="mailto:contact@kkyareuk.com"
               className={cn(
                 buttonVariants({ variant: "outline", size: "sm" }),
-                "rounded-full text-xs font-semibold gap-1.5 h-8 px-3"
+                "rounded-full text-xs font-semibold gap-1.5 h-8 px-3 cursor-pointer"
               )}
             >
               <Mail className="size-3.5 text-blue-500" />
@@ -240,7 +279,7 @@ export default function LinksPage() {
                   variant={isSelected ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedCategory(tab.id)}
-                  className="rounded-full text-xs font-semibold gap-1.5 h-8 px-3 shrink-0"
+                  className="rounded-full text-xs font-semibold gap-1.5 h-8 px-3 shrink-0 cursor-pointer"
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
@@ -256,9 +295,16 @@ export default function LinksPage() {
             <h2 className="text-sm font-bold text-foreground">
               링크 목록 ({filteredLinks.length})
             </h2>
-            <span className="text-[11px] font-medium text-muted-foreground">
-              클릭 시 새 창으로 연결돼요
-            </span>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAddDialogOpen(true)}
+              className="rounded-full text-xs font-bold gap-1 text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-950 h-7 px-2.5 cursor-pointer"
+            >
+              <Plus className="size-3" />
+              <span>새 링크 추가</span>
+            </Button>
           </div>
 
           {/* 링크 카드 리스트 */}
@@ -268,14 +314,25 @@ export default function LinksPage() {
               <p className="mt-2 text-sm font-semibold text-muted-foreground">
                 해당 카테고리의 링크가 없어요
               </p>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setSelectedCategory('all')}
-                className="mt-3 rounded-full text-xs font-semibold"
-              >
-                전체 링크 보기
-              </Button>
+              <div className="mt-3 flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setSelectedCategory('all')}
+                  className="rounded-full text-xs font-semibold cursor-pointer"
+                >
+                  전체 링크 보기
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setIsAddDialogOpen(true)}
+                  className="rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white gap-1 cursor-pointer"
+                >
+                  <Plus className="size-3.5" />
+                  새 링크 추가
+                </Button>
+              </div>
             </Card>
           ) : (
             filteredLinks.map((link) => (
@@ -301,6 +358,13 @@ export default function LinksPage() {
           </p>
         </footer>
       </main>
+
+      {/* ─── 링크 추가 다이얼로그 (PRD F-03-1) ─── */}
+      <AddLinkDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onAddLink={handleAddLink}
+      />
 
       {/* ─── 토스트 알림 ─── */}
       <Toast message={toastMsg} visible={toastVisible} />
