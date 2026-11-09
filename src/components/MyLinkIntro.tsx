@@ -13,8 +13,6 @@ import {
   ArrowRight,
   Palette,
   Zap,
-  ChevronDown,
-  Star,
   ShoppingBag,
   GraduationCap,
   Music,
@@ -126,7 +124,7 @@ const THEMES: Record<PhoneTheme, ThemeConfig> = {
   },
 };
 
-// 폰 목업 링크 데이터
+// 폰 목업 링크 데이터 (사용자: Mylink)
 interface MockLink {
   id: string;
   category: 'work' | 'sns' | 'shop';
@@ -141,17 +139,17 @@ const INITIAL_MOCK_LINKS: MockLink[] = [
   {
     id: '1',
     category: 'work',
-    title: '네이버 웹툰 연재작 보러가기',
-    subtitle: '매주 목요일 연재 중인 힐링 일상툰',
-    icon: '🎨',
+    title: '포트폴리오 & 최신 프로젝트',
+    subtitle: '노션 및 작업물 아카이브 바로가기',
+    icon: '📁',
     badge: '인기',
     clicks: 1420,
   },
   {
     id: '2',
     category: 'sns',
-    title: '인스타그램 @minji_art',
-    subtitle: '작업 비하인드 & 일상 드로잉',
+    title: '공식 인스타그램 @mylink',
+    subtitle: '새로운 소식과 일상 둘러보기',
     icon: '📸',
     badge: 'NEW',
     clicks: 890,
@@ -159,22 +157,22 @@ const INITIAL_MOCK_LINKS: MockLink[] = [
   {
     id: '3',
     category: 'shop',
-    title: '2026 한정판 다이어리 & 굿즈샵',
-    subtitle: '스마트스토어 공식 온라인 마켓',
+    title: '공식 온라인 굿즈 스토어',
+    subtitle: '스마트스토어 기획전 및 마켓',
     icon: '🛍️',
     clicks: 654,
   },
   {
     id: '4',
     category: 'work',
-    title: '일러스트 포트폴리오 노션',
-    subtitle: '캐릭터 시트 & 외주 작업 아카이브',
-    icon: '📁',
+    title: '블로그 & 뉴스레터 아카이브',
+    subtitle: '생각과 이야기를 기록하는 공간',
+    icon: '📝',
     clicks: 412,
   },
 ];
 
-// 페르소나 데이터
+// 페르소나 데이터 (한양여대 관련 내용 제거 -> 일반 대학생 및 크리에이터)
 interface PersonaCase {
   id: string;
   title: string;
@@ -201,13 +199,13 @@ const PERSONA_CASES: PersonaCase[] = [
   },
   {
     id: 'student',
-    title: '한양여대생 & 취준생',
+    title: '대학생 & 취준생',
     icon: <GraduationCap className="size-4" />,
     tag: '학생 필수템',
     subtitle: '과제전 작품 링크, 깃허브, 이력서, 링크드인을 프로필 한 줄로 스마트하게 공유하세요.',
     features: ['졸업작품전 & 프로젝트 영상 연동', '노션 포트폴리오 & 깃허브 링크', '이메일 & 오픈프로필 문의'],
     sampleLinks: [
-      { title: '2026 졸업작품전 웹사이트', category: '작품', tag: 'Live' },
+      { title: '2026 프로젝트 포트폴리오 웹사이트', category: '작품', tag: 'Live' },
       { title: '디자이너 포트폴리오 (Notion)', category: '이력서', tag: 'CV' },
       { title: 'GitHub & 프로젝트 소스코드', category: '개발', tag: 'Repo' },
     ],
@@ -240,35 +238,6 @@ const PERSONA_CASES: PersonaCase[] = [
   },
 ];
 
-// 자주 묻는 질문(FAQ) 데이터
-interface FAQItem {
-  question: string;
-  answer: string;
-}
-
-const FAQS: FAQItem[] = [
-  {
-    question: '정말 누구나 완전 무료로 이용할 수 있나요?',
-    answer:
-      '네! 마이링크는 링크 개수 제한 없이 모든 기본 기능을 100% 무료로 평생 제공합니다. 별도의 유료 결제나 숨겨진 요금 없이 자유롭게 사용하실 수 있습니다.',
-  },
-  {
-    question: '인스타그램 프로필에는 어떻게 등록하나요?',
-    answer:
-      '로그인 후 상단에 생성된 나만의 링크 주소(예: mylink.hy/@내아이디)를 복사한 뒤, 인스타그램 앱 > [프로필 편집] > [링크] 메뉴에 붙여넣기만 하면 3초 만에 완료됩니다.',
-  },
-  {
-    question: '링크별 클릭 수와 통계는 실시간으로 확인할 수 있나요?',
-    answer:
-      '네! 방문자가 내 링크를 클릭할 때마다 클라우드 데이터베이스에 실시간으로 원자적(Atomic) 집계되어 즉각 반영됩니다. 통계 페이지에서 어떤 링크가 가장 많은 사랑을 받았는지 한눈에 분석할 수 있습니다.',
-  },
-  {
-    question: '스마트폰 모바일에서도 링크 추가나 순서 수정이 되나요?',
-    answer:
-      '물론입니다. 데스크톱은 물론 모바일 사파리, 크롬 등 스마트폰 화면에서도 손쉽게 새 링크를 추가하거나 수정, 삭제할 수 있도록 모바일 터치 환경에 최적화되어 있습니다.',
-  },
-];
-
 interface MyLinkIntroProps {
   onLogin: () => void;
   isLoggingIn: boolean;
@@ -288,9 +257,6 @@ export function MyLinkIntro({ onLogin, isLoggingIn, onExploreDemo }: MyLinkIntro
 
   // 3. 페르소나 탭 상태
   const [activePersona, setActivePersona] = useState<string>('artist');
-
-  // 4. FAQ 아코디언 상태
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   // 핸들 타이핑 핸들러
   const handleHandleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -339,7 +305,7 @@ export function MyLinkIntro({ onLogin, isLoggingIn, onExploreDemo }: MyLinkIntro
                 variant="secondary"
                 className="hidden sm:inline-flex rounded-md bg-blue-50 text-[10px] font-extrabold text-blue-600 border border-blue-200/60 px-1.5 py-0"
               >
-                HY
+                PRO
               </Badge>
             </div>
           </div>
@@ -363,12 +329,6 @@ export function MyLinkIntro({ onLogin, isLoggingIn, onExploreDemo }: MyLinkIntro
               className="hover:text-blue-600 transition-colors"
             >
               활용 사례
-            </a>
-            <a
-              href="#faq"
-              className="hover:text-blue-600 transition-colors"
-            >
-              자주 묻는 질문
             </a>
           </nav>
 
@@ -414,20 +374,30 @@ export function MyLinkIntro({ onLogin, isLoggingIn, onExploreDemo }: MyLinkIntro
               {/* 상단 뱃지 */}
               <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-600 mb-6 border border-blue-200/70 shadow-xs">
                 <span className="flex size-2 rounded-full bg-blue-600 animate-pulse" />
-                <span>한양여자대학교 & 크리에이터를 위한 프로필 링크</span>
+                <span>크리에이터 & 모두를 위한 단 하나의 프로필 링크</span>
               </div>
 
-              {/* 볼드 메인 헤드라인 */}
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.18] sm:leading-[1.15] text-neutral-950">
-                나의 모든 링크를 <br className="hidden sm:inline" />
-                <span className="bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 bg-clip-text text-transparent">
-                  단 하나의 감각적인 페이지
+              {/* 볼드 메인 헤드라인: 어절 단위로 엔터(줄바꿈) 적용 */}
+              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.25] text-neutral-950">
+                <span className="block">나의</span>
+                <span className="block">모든</span>
+                <span className="block">링크를</span>
+                <span className="block bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 bg-clip-text text-transparent">
+                  단
                 </span>
-                로
+                <span className="block bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 bg-clip-text text-transparent">
+                  하나의
+                </span>
+                <span className="block bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 bg-clip-text text-transparent">
+                  감각적인
+                </span>
+                <span className="block bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 bg-clip-text text-transparent">
+                  페이지로
+                </span>
               </h1>
 
               {/* 서브 카피 */}
-              <p className="mt-5 text-base sm:text-lg font-medium text-neutral-600 max-w-xl leading-relaxed break-keep">
+              <p className="mt-6 text-base sm:text-lg font-medium text-neutral-600 max-w-xl leading-relaxed break-keep">
                 포트폴리오, 인스타툰, 스마트스토어, 문의 채널까지. <br className="hidden sm:inline" />
                 흩어진 내 작업들을 하나의 링크로 모아 팬과 고객에게 연결하세요.
               </p>
@@ -510,7 +480,7 @@ export function MyLinkIntro({ onLogin, isLoggingIn, onExploreDemo }: MyLinkIntro
               </div>
             </div>
 
-            {/* 우측 인터랙티브 폰 목업 (5 Cols) */}
+            {/* 우측 인터랙티브 폰 목업 (5 Cols) - 사용자: Mylink */}
             <div className="lg:col-span-5 flex flex-col items-center justify-center relative">
               {/* 테마 스위처 칩 바 (Phone 위쪽) */}
               <div className="mb-4 flex items-center gap-1.5 rounded-full bg-neutral-100 p-1 border border-neutral-200/80 shadow-xs">
@@ -557,17 +527,17 @@ export function MyLinkIntro({ onLogin, isLoggingIn, onExploreDemo }: MyLinkIntro
                     </div>
                   </div>
 
-                  {/* 프로필 정보 */}
+                  {/* 프로필 정보 (사용자: Mylink) */}
                   <div className="flex flex-col items-center text-center">
                     <div
                       className={`size-16 rounded-2xl flex items-center justify-center text-xl font-black shadow-md mb-2.5 transition-all ${curTheme.avatarBg}`}
                     >
-                      {activeTheme === 'dark' ? '🌙' : '🎨'}
+                      {activeTheme === 'dark' ? '✨' : '🔗'}
                     </div>
 
                     <div className="flex items-center gap-1.5">
                       <h3 className={`text-base font-black ${curTheme.textColor}`}>
-                        {handleInput.trim() ? `@${handleInput}` : '김민지 작가'}
+                        {handleInput.trim() ? `@${handleInput}` : 'Mylink'}
                       </h3>
                       <Badge className="bg-blue-600 text-white text-[9px] font-black px-1.5 py-0 h-4 rounded-full">
                         PRO
@@ -575,12 +545,11 @@ export function MyLinkIntro({ onLogin, isLoggingIn, onExploreDemo }: MyLinkIntro
                     </div>
 
                     <p className={`mt-0.5 text-[11px] font-bold font-mono ${curTheme.subtextColor}`}>
-                      {handleInput.trim() ? `mylink.hy/@${handleInput}` : '@minji_art'}
+                      {handleInput.trim() ? `mylink.hy/@${handleInput}` : '@mylink'}
                     </p>
 
                     <p className={`mt-1.5 text-xs font-normal max-w-[230px] leading-relaxed break-keep ${curTheme.subtextColor}`}>
-                      작은 온기를 그리는 일러스트 작가예요. <br />
-                      연재작과 굿즈 링크를 모아두었어요 ✨
+                      마이링크로 연결되는 나만의 프로필 공간이에요 ✨
                     </p>
                   </div>
 
@@ -660,7 +629,7 @@ export function MyLinkIntro({ onLogin, isLoggingIn, onExploreDemo }: MyLinkIntro
               </div>
 
               {/* 주변 플로팅 배지 1: 실시간 방문자 */}
-              <div className="hidden sm:flex absolute -left-8 top-28 items-center gap-2.5 rounded-2xl bg-white/95 p-3 shadow-xl border border-neutral-200/80 backdrop-blur-md animate-bounce duration-1000">
+              <div className="hidden sm:flex absolute -left-8 top-28 items-center gap-2.5 rounded-2xl bg-white/95 p-3 shadow-xl border border-neutral-200/80 backdrop-blur-md">
                 <div className="flex size-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                   <BarChart3 className="size-5" />
                 </div>
@@ -984,139 +953,7 @@ export function MyLinkIntro({ onLogin, isLoggingIn, onExploreDemo }: MyLinkIntro
         </div>
       </section>
 
-      {/* ─── 6. 실제 사용자 후기 (Social Proof) ─── */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-neutral-100/70 border-t border-neutral-200/80">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center mb-12">
-            <Badge className="bg-amber-50 text-amber-600 border border-amber-200/80 font-bold mb-3 px-3 py-1">
-              생생한 실사용 후기
-            </Badge>
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-neutral-950">
-              이미 많은 크리에이터가 사용 중입니다
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Review 1 */}
-            <Card className="p-6 rounded-3xl border-neutral-200 bg-white shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1 text-amber-400 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="size-4 fill-amber-400" />
-                  ))}
-                </div>
-                <p className="text-xs sm:text-sm font-medium text-neutral-700 leading-relaxed break-keep">
-                  &ldquo;인스타 바이오에 링크 하나만 들어갈 수 있어서 늘 고민이었는데, 마이링크 덕분에 최신 웹툰 링크랑 굿즈 스토어를 모두 보여줄 수 있어 너무 편해요!&rdquo;
-                </p>
-              </div>
-              <div className="mt-5 pt-3 border-t border-neutral-100 flex items-center gap-2.5">
-                <div className="size-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">
-                  🎨
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-neutral-900">웹툰 작가 K님</div>
-                  <div className="text-[10px] text-neutral-400">인스타 팔로워 1.2만</div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Review 2 */}
-            <Card className="p-6 rounded-3xl border-neutral-200 bg-white shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1 text-amber-400 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="size-4 fill-amber-400" />
-                  ))}
-                </div>
-                <p className="text-xs sm:text-sm font-medium text-neutral-700 leading-relaxed break-keep">
-                  &ldquo;졸업작품전 준비하면서 노션 포트폴리오랑 유튜브 시연 영상을 담았어요. 교수님과 채용 담당자분들이 보기 깔끔하다고 칭찬해주셨습니다.&rdquo;
-                </p>
-              </div>
-              <div className="mt-5 pt-3 border-t border-neutral-100 flex items-center gap-2.5">
-                <div className="size-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs">
-                  🎓
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-neutral-900">한양여대 디자인과 이*은</div>
-                  <div className="text-[10px] text-neutral-400">2학년 재학생</div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Review 3 */}
-            <Card className="p-6 rounded-3xl border-neutral-200 bg-white shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-1 text-amber-400 mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="size-4 fill-amber-400" />
-                  ))}
-                </div>
-                <p className="text-xs sm:text-sm font-medium text-neutral-700 leading-relaxed break-keep">
-                  &ldquo;어떤 링크를 사람들이 많이 누르는지 실시간 클릭 수로 확인할 수 있어서 마케팅 전략 짤 때 진짜 큰 도움이 됐어요. 강추합니다!&rdquo;
-                </p>
-              </div>
-              <div className="mt-5 pt-3 border-t border-neutral-100 flex items-center gap-2.5">
-                <div className="size-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs">
-                  🛍️
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-neutral-900">문구 스마트스토어 대표</div>
-                  <div className="text-[10px] text-neutral-400">월 주문 500건+</div>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── 7. 자주 묻는 질문 (FAQ Accordion) ─── */}
-      <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 bg-white border-t border-neutral-200/80">
-        <div className="mx-auto max-w-3xl">
-          <div className="text-center mb-12">
-            <Badge className="bg-neutral-100 text-neutral-700 border border-neutral-300 font-bold mb-3 px-3 py-1">
-              FAQ
-            </Badge>
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-neutral-950">
-              자주 묻는 질문
-            </h2>
-            <p className="mt-2 text-sm text-neutral-500">
-              궁금한 점이 있으신가요? 가장 자주 문의주시는 내용을 모았습니다.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            {FAQS.map((faq, idx) => {
-              const isOpen = openFaqIndex === idx;
-              return (
-                <div
-                  key={idx}
-                  className="rounded-2xl border border-neutral-200 bg-white overflow-hidden transition-all"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="flex w-full items-center justify-between p-4 sm:p-5 text-left font-extrabold text-sm sm:text-base text-neutral-950 cursor-pointer hover:bg-neutral-50/70"
-                  >
-                    <span>{faq.question}</span>
-                    <ChevronDown
-                      className={`size-4 text-neutral-400 transition-transform duration-200 shrink-0 ml-2 ${
-                        isOpen ? 'rotate-180 text-blue-600' : ''
-                      }`}
-                    />
-                  </button>
-                  {isOpen && (
-                    <div className="px-4 sm:px-5 pb-5 pt-1 text-xs sm:text-sm font-medium text-neutral-600 leading-relaxed border-t border-neutral-100 animate-in fade-in">
-                      {faq.answer}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── 8. 하단 대형 CTA 배너 ─── */}
+      {/* ─── 6. 하단 대형 CTA 배너 ─── */}
       <section className="py-20 sm:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-700 text-white text-center relative overflow-hidden">
         {/* 장식용 원형 블러 */}
         <div className="absolute top-0 right-0 size-96 rounded-full bg-white/10 blur-3xl pointer-events-none" />
@@ -1158,19 +995,15 @@ export function MyLinkIntro({ onLogin, isLoggingIn, onExploreDemo }: MyLinkIntro
         </div>
       </section>
 
-      {/* ─── 9. 푸터 ─── */}
+      {/* ─── 7. 푸터 ─── */}
       <footer className="py-10 bg-white border-t border-neutral-200 text-center text-xs text-neutral-500">
         <div className="mx-auto max-w-5xl px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="flex size-6 items-center justify-center rounded-lg bg-blue-600 text-white text-xs font-black">
-              HY
+              MY
             </div>
             <span className="font-bold text-neutral-800">
-              마이링크 (My Link HY)
-            </span>
-            <span className="text-neutral-400">|</span>
-            <span className="text-neutral-500">
-              한양여자대학교 아이디어를 현실로 바이브 코딩
+              마이링크 (My Link)
             </span>
           </div>
 

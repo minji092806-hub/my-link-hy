@@ -472,7 +472,7 @@ export default function LinksPage() {
     if (navigator.share) {
       navigator
         .share({
-          title: currentUser ? `${userDisplayName}의 마이링크` : '김민지 작가 마이링크',
+          title: currentUser ? `${userDisplayName}의 마이링크` : 'Mylink 마이링크',
           text: '나만의 링크 모음 페이지를 확인해보세요!',
           url: shareUrl,
         })
@@ -676,7 +676,7 @@ export default function LinksPage() {
                 />
               ) : null}
               <AvatarFallback className="rounded-2xl sm:rounded-3xl bg-gradient-to-br from-blue-600 via-blue-500 to-sky-400 text-2xl sm:text-3xl text-white font-bold">
-                {currentUser ? userDisplayName[0]?.toUpperCase() : '🎨'}
+                {currentUser ? userDisplayName[0]?.toUpperCase() : 'MY'}
               </AvatarFallback>
             </Avatar>
             {/* 공식 인증 또는 수정 뱃지 */}
@@ -702,10 +702,10 @@ export default function LinksPage() {
           {/* 작가/사용자 이름 및 핸들 (users/{user.uid} 정보 표시) */}
           <div className="flex items-center gap-1.5 flex-wrap justify-center">
             <h1 className="text-xl sm:text-[22px] font-extrabold tracking-tight text-foreground truncate max-w-[220px] sm:max-w-xs">
-              {currentUser ? userDisplayName : '김민지'}
+              {currentUser ? userDisplayName : 'Mylink'}
             </h1>
             <span className="text-xs sm:text-[14px] font-semibold text-muted-foreground">
-              {currentUser ? '(내 링크)' : '(꺄륵)'}
+              {currentUser ? '(내 링크)' : '(공식 데모)'}
             </span>
             {!isPreviewMode && currentUser && (
               <Button
@@ -723,7 +723,7 @@ export default function LinksPage() {
           <p className="mt-0.5 sm:mt-1 text-[11px] sm:text-xs font-medium text-muted-foreground font-mono">
             {currentUser
               ? (activeUserProfile?.handle || `@${userDisplayName}`)
-              : '@minji_art'}
+              : '@mylink'}
           </p>
 
           {/* 소개글 */}
@@ -732,8 +732,8 @@ export default function LinksPage() {
               activeUserProfile?.bio || `${userDisplayName}님의 개인 마이링크 페이지예요.`
             ) : (
               <>
-                일상 속 작은 온기를 그리는 웹툰 작가예요.<br />
-                연재작과 포트폴리오, 굿즈 링크를 모두 모아두었어요.
+                마이링크로 연결되는 나만의 프로필 공간이에요 ✨<br />
+                포트폴리오와 소셜 채널을 한곳에서 만나보세요.
               </>
             )}
           </p>
