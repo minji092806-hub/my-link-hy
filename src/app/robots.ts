@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://my-link-hy-minji092806-hub.vercel.app';
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://my-link-hy-six.vercel.app';
 
   return {
     rules: [
