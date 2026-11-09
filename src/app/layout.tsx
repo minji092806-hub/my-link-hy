@@ -46,12 +46,21 @@ export const metadata: Metadata = {
     title: "My Link HY - 나만의 올인원 바이오링크 & 포트폴리오",
     description:
       "웹툰, SNS 채널, 스마트스토어, 포트폴리오까지 나의 모든 링크를 단 하나의 세련된 프로필로 연결하는 바이오링크 서비스",
+    images: [
+      {
+        url: `${siteUrl}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "My Link HY - 나만의 올인원 바이오링크 & 포트폴리오",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "My Link HY - 나만의 올인원 바이오링크 & 포트폴리오",
     description:
       "웹툰, SNS 채널, 스마트스토어, 포트폴리오까지 나의 모든 링크를 단 하나의 세련된 프로필로 연결하는 바이오링크 서비스",
+    images: [`${siteUrl}/og-image.png`],
   },
   robots: {
     index: true,
