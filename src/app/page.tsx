@@ -57,6 +57,7 @@ import {
   Info,
   Pencil,
   Eye,
+  Compass,
 } from 'lucide-react';
 
 type FilterCategory = 'all' | 'work' | 'sns' | 'shop' | 'contact';
@@ -122,6 +123,7 @@ export default function LinksPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
 
   // UI 상태
   const [selectedCategory, setSelectedCategory] = useState<FilterCategory>('all');
@@ -508,11 +510,15 @@ export default function LinksPage() {
     );
   }
 
-  // ─── 0. 로그인 전: 마이 링크 설명 & 소개 랜딩 페이지 ───
-  if (!currentUser) {
+  // ─── 0. 로그인 전: 마이 링크 설명 & 소개 랜딩 페이지 (둘러보기 모드가 아닐 때) ───
+  if (!currentUser && !isDemoMode) {
     return (
       <>
-        <MyLinkIntro onLogin={handleGoogleLogin} isLoggingIn={isLoggingIn} />
+        <MyLinkIntro
+          onLogin={handleGoogleLogin}
+          isLoggingIn={isLoggingIn}
+          onExploreDemo={() => setIsDemoMode(true)}
+        />
         <Toast message={toastMsg} visible={toastVisible} />
       </>
     );
@@ -578,6 +584,36 @@ export default function LinksPage() {
                 className="h-6.5 sm:h-7 rounded-full text-[11px] sm:text-xs font-bold bg-white text-blue-700 hover:bg-neutral-100 shadow-xs cursor-pointer px-2.5 sm:px-3"
               >
                 편집 모드로 복귀
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ─── 비로그인 둘러보기 모드 안내 배너 ─── */}
+        {!currentUser && isDemoMode && (
+          <div className="sticky top-16 sm:top-20 z-20 mb-4 sm:mb-5 flex items-center justify-between gap-2 sm:gap-3 rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 p-2.5 sm:p-3.5 text-white shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-top-3">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+              <span className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white">
+                <Compass className="size-3.5 sm:size-4" />
+              </span>
+              <div className="flex flex-col min-w-0">
+                <span className="text-[11px] sm:text-xs font-bold leading-tight truncate">
+                  샘플 프로필 둘러보기 모드
+                </span>
+                <span className="text-[9px] sm:text-[10px] text-blue-100 truncate mt-0.5">
+                  방문자에게 실제로 보이는 프로필 화면을 체험 중이에요
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsDemoMode(false)}
+                className="h-6.5 sm:h-7 rounded-full text-[11px] sm:text-xs font-bold bg-white text-blue-700 hover:bg-neutral-100 shadow-xs cursor-pointer px-2.5 sm:px-3"
+              >
+                소개 페이지로
               </Button>
             </div>
           </div>
