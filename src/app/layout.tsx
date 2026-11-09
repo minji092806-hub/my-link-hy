@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://my-link-hy.vercel.app';
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://my-link-hy-minji092806-hub.vercel.app';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
