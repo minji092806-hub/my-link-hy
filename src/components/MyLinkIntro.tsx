@@ -381,7 +381,7 @@ export function MyLinkIntro({ onLogin, isLoggingIn, onExploreDemo }: MyLinkIntro
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.2] sm:leading-[1.18] text-neutral-950">
                 <span className="block">나의 모든 링크를</span>
                 <span className="block mt-2 sm:mt-3 bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 bg-clip-text text-transparent">
-                  단 하나의 감각적인 페이지로
+                  단 하나의 페이지로
                 </span>
               </h1>
 
