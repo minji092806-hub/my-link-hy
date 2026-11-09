@@ -377,22 +377,11 @@ export function MyLinkIntro({ onLogin, isLoggingIn, onExploreDemo }: MyLinkIntro
                 <span>크리에이터 & 모두를 위한 단 하나의 프로필 링크</span>
               </div>
 
-              {/* 볼드 메인 헤드라인: 어절 단위로 엔터(줄바꿈) 적용 */}
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.25] text-neutral-950">
-                <span className="block">나의</span>
-                <span className="block">모든</span>
-                <span className="block">링크를</span>
-                <span className="block bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 bg-clip-text text-transparent">
-                  단
-                </span>
-                <span className="block bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 bg-clip-text text-transparent">
-                  하나의
-                </span>
-                <span className="block bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 bg-clip-text text-transparent">
-                  감각적인
-                </span>
-                <span className="block bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 bg-clip-text text-transparent">
-                  페이지로
+              {/* 볼드 메인 헤드라인 */}
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.2] sm:leading-[1.18] text-neutral-950">
+                <span className="block">나의 모든 링크를</span>
+                <span className="block mt-2 sm:mt-3 bg-gradient-to-r from-blue-600 via-sky-600 to-indigo-600 bg-clip-text text-transparent">
+                  단 하나의 감각적인 페이지로
                 </span>
               </h1>
 
