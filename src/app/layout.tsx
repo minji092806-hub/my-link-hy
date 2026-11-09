@@ -64,6 +64,11 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  verification: {
+    other: {
+      "naver-site-verification": "fdd3bbef9ec853d22c71c27a53d8cfbe",
+    },
+  },
 };
 
 const jsonLd = {
